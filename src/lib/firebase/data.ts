@@ -1,6 +1,6 @@
 "use client";
 
-import { addDoc, collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 export const REQUEST_STATUSES = ["New", "Accepted", "In Progress", "Ready / Awaiting Customer", "Complete", "Cancelled"] as const;
@@ -19,8 +19,10 @@ export type TyreInventoryItem = {
 const requestsCollection = collection(db, "assistanceRequests");
 const inventoryCollection = collection(db, "tyreInventory");
 
-export async function createAssistanceRequest(data: Omit<AssistanceRequest, "id">) {
-  return (await addDoc(requestsCollection, data)).id;
+export function createAssistanceRequest(data: Omit<AssistanceRequest, "id">) {
+  const reference = doc(requestsCollection);
+  const writePromise = setDoc(reference, data);
+  return { id: reference.id, writePromise };
 }
 export async function getAssistanceRequests(): Promise<AssistanceRequest[]> {
   const snapshot = await getDocs(requestsCollection);
