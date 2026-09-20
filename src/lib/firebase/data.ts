@@ -1,92 +1,41 @@
+"use client";
+
 import { addDoc, collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
-export type OfferingRecord = {
-  id: string;
-  name: string;
-  category: "Food" | "Car Wash" | "Braai" | "Other";
-  detail: string;
-  price?: string;
-  active: boolean;
-  imageUrl?: string;
+export const REQUEST_STATUSES = ["New", "Accepted", "In Progress", "Ready / Awaiting Customer", "Complete", "Cancelled"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
+export type AssistanceRequest = {
+  id: string; createdAt: string; name: string; phone: string; vehicle: string; problem: string; notes: string; locationText: string;
+  latitude?: number; longitude?: number; locationAccuracy?: number; status: RequestStatus;
 };
 
-export type SpecialRecord = {
-  id: string;
-  title: string;
-  detail: string;
-  active: boolean;
-  offer?: string;
-  startDate?: string;
-  endDate?: string;
+export type TyreInventoryItem = {
+  id: string; size: string; brand: string; condition: "New" | "Used" | "Retreaded" | "Other";
+  quantity: number; price: string; available: boolean; notes: string;
 };
 
-export type BookingRequestRecord = {
-  id: string;
-  createdAt: string;
-  name: string;
-  phone: string;
-  email: string;
-  requestType: string;
-  date?: string;
-  startTime?: string;
-  details: string;
-  notes: string;
-  status: "New" | "Contacted" | "Confirmed" | "Completed" | "Cancelled";
-};
+const requestsCollection = collection(db, "assistanceRequests");
+const inventoryCollection = collection(db, "tyreInventory");
 
-const offeringsCollection = collection(db, "offerings");
-const specialCollection = collection(db, "specials");
-const bookingCollection = collection(db, "bookingRequests");
-
-export async function getOfferings(): Promise<OfferingRecord[]> {
-  const snapshot = await getDocs(offeringsCollection);
-  return snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<OfferingRecord, "id">) }));
+export async function createAssistanceRequest(data: Omit<AssistanceRequest, "id">) {
+  return (await addDoc(requestsCollection, data)).id;
 }
-
-export async function saveOfferingRecord(item: OfferingRecord) {
-  await setDoc(doc(db, "offerings", item.id), item);
+export async function getAssistanceRequests(): Promise<AssistanceRequest[]> {
+  const snapshot = await getDocs(requestsCollection);
+  return snapshot.docs.map(item => ({ id: item.id, ...(item.data() as Omit<AssistanceRequest, "id">) }));
 }
-
-export async function deleteOfferingRecord(id: string) {
-  await deleteDoc(doc(db, "offerings", id));
+export async function updateAssistanceStatus(id: string, status: RequestStatus) {
+  await updateDoc(doc(db, "assistanceRequests", id), { status });
 }
-
-export async function getSpecials(): Promise<SpecialRecord[]> {
-  const snapshot = await getDocs(specialCollection);
-  return snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<SpecialRecord, "id">) }));
+export async function getTyreInventory(): Promise<TyreInventoryItem[]> {
+  const snapshot = await getDocs(inventoryCollection);
+  return snapshot.docs.map(item => ({ id: item.id, ...(item.data() as Omit<TyreInventoryItem, "id">) }));
 }
-
-export async function saveSpecialRecord(item: SpecialRecord) {
-  await setDoc(doc(db, "specials", item.id), item);
+export async function saveTyreInventoryItem(item: TyreInventoryItem) {
+  await setDoc(doc(db, "tyreInventory", item.id), item);
 }
-
-export async function deleteSpecialRecord(id: string) {
-  await deleteDoc(doc(db, "specials", id));
-}
-
-export async function createBookingRequest(data: Omit<BookingRequestRecord, "id">) {
-  // Customer requests are intentionally public. No Firebase Auth session is
-  // required here; Firestore rules control the public create boundary.
-  try {
-    const result = await addDoc(bookingCollection, data);
-    return result.id;
-  } catch (error) {
-    console.error("[Meating Place] booking request failed", error);
-    throw error;
-  }
-}
-
-export async function getBookingRequests(): Promise<BookingRequestRecord[]> {
-  const snapshot = await getDocs(bookingCollection);
-  return snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<BookingRequestRecord, "id">) }));
-}
-
-export async function updateBookingStatus(id: string, status: BookingRequestRecord["status"]) {
-  await updateDoc(doc(db, "bookingRequests", id), { status });
-}
-
-export async function clearBookingRequests() {
-  const snapshot = await getDocs(bookingCollection);
-  for (const item of snapshot.docs) await deleteDoc(item.ref);
+export async function deleteTyreInventoryItem(id: string) {
+  await deleteDoc(doc(db, "tyreInventory", id));
 }
