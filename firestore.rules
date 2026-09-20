@@ -2,29 +2,46 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      return request.auth != null
+      return isSignedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff'];
     }
 
+    function validRequestCreate() {
+      return request.resource.data.keys().hasOnly([
+        'createdAt', 'name', 'phone', 'vehicle', 'problem', 'notes',
+        'locationText', 'latitude', 'longitude', 'locationAccuracy', 'status'
+      ])
+      && request.resource.data.keys().hasAll([
+        'createdAt', 'name', 'phone', 'vehicle', 'problem', 'notes',
+        'locationText', 'status'
+      ])
+      && request.resource.data.createdAt is string
+      && request.resource.data.name is string
+      && request.resource.data.phone is string
+      && request.resource.data.vehicle is string
+      && request.resource.data.problem is string
+      && request.resource.data.notes is string
+      && request.resource.data.locationText is string
+      && request.resource.data.status == 'New'
+      && (!request.resource.data.keys().hasAny(['latitude']) || request.resource.data.latitude is number)
+      && (!request.resource.data.keys().hasAny(['longitude']) || request.resource.data.longitude is number)
+      && (!request.resource.data.keys().hasAny(['locationAccuracy']) || request.resource.data.locationAccuracy is number);
+    }
+
     match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if isSignedIn() && request.auth.uid == uid;
       allow create, update, delete: if false;
     }
 
     match /assistanceRequests/{requestId} {
-      allow create: if
-        request.resource.data.keys().hasOnly(['createdAt','name','phone','vehicle','problem','notes','locationText','latitude','longitude','locationAccuracy','status'])
-        && request.resource.data.keys().hasAll(['createdAt','name','phone','vehicle','problem','notes','locationText','status'])
-        && request.resource.data.createdAt is string
-        && request.resource.data.name is string && request.resource.data.name.size() > 0
-        && request.resource.data.phone is string && request.resource.data.phone.size() > 0
-        && request.resource.data.vehicle is string && request.resource.data.vehicle.size() > 0
-        && request.resource.data.problem is string && request.resource.data.problem.size() > 0
-        && request.resource.data.notes is string
-        && request.resource.data.locationText is string
-        && request.resource.data.status == 'New';
+      allow create: if validRequestCreate();
       allow read, update, delete: if isAdmin();
     }
 
