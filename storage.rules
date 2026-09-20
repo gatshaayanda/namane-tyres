@@ -8,15 +8,11 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff'];
     }
 
-    match /homeMedia/{fileName} {
+    match /namaneMedia/{fileName} {
       allow read: if true;
-      allow write: if isAdmin()
-        && request.resource.size < 12 * 1024 * 1024
+      allow write: if isAdmin() && request.resource.size < 12 * 1024 * 1024
         && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('video/.*'));
     }
-
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
+    match /{allPaths=**} { allow read, write: if false; }
   }
 }
