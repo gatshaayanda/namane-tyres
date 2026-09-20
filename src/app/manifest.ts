@@ -2,19 +2,19 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "THE MEATING PLACE",
-    short_name: "Meating Place",
-    description: "THE MEATING PLACE — CAR WASH & BRAAI. Good food, good mood.",
+    name: "Namane Tyres",
+    short_name: "Namane Tyres",
+    description: "Tyre fitting, repairs, sales and roadside assistance in Gaborone.",
     start_url: "/",
     display: "standalone",
-    background_color: "#17110d",
-    theme_color: "#17110d",
+    background_color: "#111827",
+    theme_color: "#111827",
     orientation: "portrait-primary",
     lang: "en",
-    categories: ["food", "lifestyle", "business"],
+    categories: ["business", "automotive"],
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
-    ],
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
+    ]
   };
 }
