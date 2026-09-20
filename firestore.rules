@@ -2,58 +2,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isAdmin() {
-      return isSignedIn()
+      return request.auth != null
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role
-          in ['owner', 'staff'];
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff'];
     }
 
     match /admins/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
       allow create, update, delete: if false;
     }
 
-    match /offerings/{offeringId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /specials/{specialId} {
-      allow read: if resource.data.active == true || isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /homeMedia/{mediaId} {
-      allow read: if resource.data.active == true || isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Customer booking requests are intentionally public to create.
-    // No customer account or anonymous Firebase Auth is required.
-    match /bookingRequests/{requestId} {
-      allow create: if true;
+    match /assistanceRequests/{requestId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['createdAt','name','phone','vehicle','problem','notes','locationText','latitude','longitude','locationAccuracy','status'])
+        && request.resource.data.keys().hasAll(['createdAt','name','phone','vehicle','problem','notes','locationText','status'])
+        && request.resource.data.createdAt is string
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.phone is string && request.resource.data.phone.size() > 0
+        && request.resource.data.vehicle is string && request.resource.data.vehicle.size() > 0
+        && request.resource.data.problem is string && request.resource.data.problem.size() > 0
+        && request.resource.data.notes is string
+        && request.resource.data.locationText is string
+        && request.resource.data.status == 'New';
       allow read, update, delete: if isAdmin();
     }
 
-    match /customers/{customerId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /jobs/{jobId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /availability/{availabilityId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /orders/{orderId} {
+    match /tyreInventory/{itemId} {
       allow read, write: if isAdmin();
     }
 
