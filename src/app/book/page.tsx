@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import BookForm from "./book-form";
 
 export const metadata: Metadata = {
-  title: "Make a Booking Request",
-  description: "Send THE MEATING PLACE a request for food, car wash, braai, catering or a private event.",
+  title: "Request Assistance",
+  description: "Request tyre fitting, puncture repair, pressure checks, tyre sales or roadside assistance from Namane Tyres in Gaborone.",
   alternates: { canonical: "/book" },
 };
 
