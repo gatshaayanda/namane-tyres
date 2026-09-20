@@ -5,54 +5,24 @@ import PwaRegister from "@/app/pwa-register";
 import "./globals.css";
 import "./pwa.css";
 
-const siteUrl = "https://meating-place.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://namane-tyres.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: "THE MEATING PLACE | Car Wash & Braai",
-    template: "%s | THE MEATING PLACE",
-  },
-  description: "THE MEATING PLACE — CAR WASH & BRAAI. Good food, good mood. Let's Meat & Eat.",
-  applicationName: "THE MEATING PLACE",
-  generator: "Next.js",
-  keywords: ["The Meating Place", "car wash", "braai", "food", "restaurant", "car wash and braai"],
+  title: { default: "Namane Tyres | Gaborone", template: "%s | Namane Tyres" },
+  description: "Namane Tyres — tyre fitting, puncture repair, pressure checks, tyre sales, light wash and roadside assistance in Gaborone.",
+  applicationName: "Namane Tyres",
+  keywords: ["Namane Tyres", "Gaborone tyres", "tyre fitting", "puncture repair", "roadside assistance"],
   alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    url: siteUrl,
-    siteName: "THE MEATING PLACE",
-    title: "THE MEATING PLACE | Car Wash & Braai",
-    description: "Good food, good mood. Let's Meat & Eat.",
-  },
-  twitter: {
-    card: "summary",
-    title: "THE MEATING PLACE | Car Wash & Braai",
-    description: "Good food, good mood. Let's Meat & Eat.",
-  },
+  openGraph: { type: "website", url: siteUrl, siteName: "Namane Tyres", title: "Namane Tyres | Gaborone", description: "Tyre fitting, repairs, sales and roadside assistance in Gaborone." },
+  twitter: { card: "summary", title: "Namane Tyres | Gaborone", description: "Tyre fitting, repairs, sales and roadside assistance in Gaborone." },
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
   manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    title: "Meating Place",
-    statusBarStyle: "black-translucent",
-  },
+  appleWebApp: { capable: true, title: "Namane Tyres", statusBarStyle: "default" },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#17110d",
-  colorScheme: "light",
-};
+export const viewport: Viewport = { themeColor: "#111827", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="en">
-      <body>
-        <PwaRegister />
-        {children}
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
-  );
+  return <html lang="en"><body><PwaRegister />{children}<Analytics /><SpeedInsights /></body></html>;
 }
