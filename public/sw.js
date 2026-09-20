@@ -1,4 +1,4 @@
-const CACHE_NAME = "namane-tyres-shell-v3";
+const CACHE_NAME = "namane-tyres-shell-v4";
 const APP_SHELL = ["/", "/book", "/offline", "/icon.svg"];
 const PUBLIC_MEDIA = [
   "/namane-assets/work-location.jpg",
