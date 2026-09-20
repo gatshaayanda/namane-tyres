@@ -1,50 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
-import { createBookingRequest } from "@/lib/firebase/data";
+import { createAssistanceRequest } from "@/lib/firebase/data";
 
-const requestTypes = ["Food", "Car Wash", "Braai", "Catering / Group", "Private Event", "Other"] as const;
-type RequestType = (typeof requestTypes)[number];
-
-function requestedType(value: string | null): RequestType | "" {
-  if (value === "food") return "Food";
-  if (value === "car-wash") return "Car Wash";
-  if (value === "braai") return "Braai";
-  if (value === "catering") return "Catering / Group";
-  if (value === "private-event") return "Private Event";
-  return "";
-}
-
-function localDateValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function firebaseErrorDetails(error: unknown) {
-  if (typeof error === "object" && error !== null) {
-    const candidate = error as { code?: unknown; message?: unknown };
-    const code = typeof candidate.code === "string" ? candidate.code : "unknown";
-    const message = typeof candidate.message === "string" ? candidate.message : "Unknown Firebase error";
-    return { code, message };
-  }
-  return { code: "unknown", message: String(error) };
+function errorCode(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code) : "unknown";
 }
 
 export default function BookForm() {
-  const searchParams = useSearchParams();
-  const initialType = useMemo(() => requestedType(searchParams.get("type")), [searchParams]);
   const [submitted, setSubmitted] = useState(false);
   const [pendingSync, setPendingSync] = useState(false);
   const [reference, setReference] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const minDate = localDateValue();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,61 +26,53 @@ export default function BookForm() {
       createdAt: new Date().toISOString(),
       name: String(form.get("name") ?? "").trim(),
       phone: String(form.get("phone") ?? "").trim(),
-      email: String(form.get("email") ?? "").trim(),
-      requestType: String(form.get("requestType") ?? "").trim(),
-      date: String(form.get("date") ?? "").trim(),
-      startTime: String(form.get("startTime") ?? "").trim(),
-      details: String(form.get("details") ?? "").trim(),
+      vehicle: String(form.get("vehicle") ?? "").trim(),
+      problem: String(form.get("problem") ?? "").trim(),
       notes: String(form.get("notes") ?? "").trim(),
+      locationText: String(form.get("locationText") ?? "").trim(),
       status: "New" as const,
     };
 
-    if (!request.name || !request.phone || !request.requestType || !request.details) {
-      setError("Please complete your name, phone number, request type and what you need.");
-      setBusy(false);
-      return;
-    }
-    if (request.date && request.date < minDate) {
-      setError("Please choose today or a future date.");
+    if (!request.name || !request.phone || !request.vehicle || !request.problem) {
+      setError("Please complete your name, phone number, vehicle and what is wrong.");
       setBusy(false);
       return;
     }
 
     try {
+      let location: { latitude?: number; longitude?: number; locationAccuracy?: number } = {};
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 7000, maximumAge: 300000 }),
+          );
+          location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            locationAccuracy: position.coords.accuracy,
+          };
+        } catch {
+          // Location is optional; continue with the customer-entered landmark.
+        }
+      }
+
       const wasOffline = !navigator.onLine;
-      const id = await createBookingRequest(request);
+      const id = await createAssistanceRequest({ ...request, ...location });
       setReference(id.slice(0, 8).toUpperCase());
       setPendingSync(wasOffline);
       setSubmitted(true);
       event.currentTarget.reset();
-    } catch (error) {
-      const details = firebaseErrorDetails(error);
-      console.error("[Meating Place] booking request failed", { code: details.code, message: details.message, error });
-      setError(`We could not record your request right now (${details.code}). Please try again in a moment. If the problem continues, contact THE MEATING PLACE directly.`);
+    } catch (err) {
+      console.error("[Namane Tyres] request failed", err);
+      setError("We could not save your request (" + errorCode(err) + "). It was not confirmed as received. Please try again when connected or contact Namane Tyres directly.");
     } finally {
       setBusy(false);
     }
   }
 
-  return (
-    <main className="bookPage">
-      <nav className="nav"><div className="container navInner"><Link href="/" className="logo"><span className="logoMark" aria-hidden="true" />THE MEATING PLACE</Link><Link href="/" className="button buttonLight">Back to site</Link></div></nav>
-      <div className="formWrap">
-        <div className="sectionHead"><span className="kicker">Plan your visit</span><h1 style={{fontSize:"clamp(2.6rem,6vw,4.5rem)"}}>Tell us what you&apos;re planning.</h1><p>Food, car wash, braai, catering or a private get-together — send the details once and the team can take it from there.</p></div>
-        <div className="formCard">
-          {submitted ? <div className="confirm"><div className="confirmIcon" aria-hidden="true">🔥</div><h2>{pendingSync ? "Request saved" : "Request received"}</h2><p>{pendingSync ? "Your request is saved on this device and will sync with THE MEATING PLACE when you reconnect." : "Your request is in the Meating Place queue."}</p><p><strong>Request #{reference}</strong></p><p>{pendingSync ? "Keep this app installed/open on this device and reconnect when you can. Until sync completes, the team has not received the request yet." : "The team can now review what you need and contact you to confirm the details."}</p><div className="actions" style={{justifyContent:"center"}}><Link className="button buttonPrimary" href="/">Return to THE MEATING PLACE</Link><Link className="button buttonLight" href="/book">Send another request</Link></div></div> : <form onSubmit={handleSubmit}><div className="formGrid">
-            <div className="field"><label htmlFor="name">Your name</label><input id="name" name="name" required autoComplete="name" /></div>
-            <div className="field"><label htmlFor="phone">Phone / WhatsApp</label><input id="phone" name="phone" required type="tel" autoComplete="tel" /></div>
-            <div className="field fieldFull"><label htmlFor="email">Email <span style={{fontWeight:400}}>(optional)</span></label><input id="email" name="email" type="email" autoComplete="email" /></div>
-            <div className="field"><label htmlFor="requestType">What are you looking for?</label><select id="requestType" name="requestType" required defaultValue={initialType}><option value="" disabled>Select one</option>{requestTypes.map((type) => <option key={type}>{type}</option>)}</select></div>
-            <div className="field"><label htmlFor="date">Date <span style={{fontWeight:400}}>(optional)</span></label><input id="date" name="date" type="date" min={minDate} /></div>
-            <div className="field"><label htmlFor="startTime">Preferred time <span style={{fontWeight:400}}>(optional)</span></label><input id="startTime" name="startTime" type="time" /></div>
-            <div className="field fieldFull"><label htmlFor="details">Tell us what you need</label><textarea id="details" name="details" required placeholder="For example: lunch for 12, a Saturday braai, car wash while I eat, birthday gathering…" /></div>
-            <div className="field fieldFull"><label htmlFor="notes">Anything else? <span style={{fontWeight:400}}>(optional)</span></label><textarea id="notes" name="notes" placeholder="Useful details, timing, group size, special requests or questions" /></div>
-            <div className="field fieldFull"><button className="button buttonPrimary" type="submit" disabled={busy}>{busy ? "Saving request…" : "Send request"}</button></div>
-          </div>{error && <p role="alert" style={{color:"#b42318",lineHeight:1.6}}>{error}</p>}<p style={{color:"var(--muted)",fontSize:".84rem",lineHeight:1.6,marginBottom:0}}>This is a request, not a confirmed booking. If you are offline, Firestore can keep the request on this device and sync it when the connection returns. The request is only considered received by THE MEATING PLACE after synchronization.</p></form>}
-        </div>
-      </div>
-    </main>
-  );
+  if (submitted) {
+    return <main className="bookPage"><nav className="nav"><div className="container navInner"><Link href="/" className="logo"><span className="logoMark">NT</span><span>Namane Tyres</span></Link></div></nav><div className="formWrap"><div className="formCard confirm"><div className="confirmIcon">{pendingSync ? "📥" : "✅"}</div><span className="kicker">{pendingSync ? "Offline save" : "Request sent"}</span><h1>{pendingSync ? "Saved on this phone." : "Sent to Namane Tyres."}</h1><p>{pendingSync ? "Your request is waiting to send. Reconnect this device so Firestore can synchronize it. Until that happens, the business has not received it." : "Your request has been written to the Namane Tyres request queue. The team can review it and contact you."}</p><strong>Reference #{reference}</strong><div className="actions centered"><Link className="button buttonPrimary" href="/">Back to Namane Tyres</Link><Link className="button buttonLight" href="/book">New request</Link></div></div></div></main>;
+  }
+
+  return <main className="bookPage"><nav className="nav"><div className="container navInner"><Link href="/" className="logo"><span className="logoMark">NT</span><span>Namane Tyres</span></Link><Link href="/" className="button buttonLight">Back</Link></div></nav><div className="formWrap"><div className="sectionHead"><span className="kicker">Request Assistance</span><h1>Tell us what&apos;s happening.</h1><p>Give the team enough information to understand the problem. Location sharing is optional.</p></div><div className="formCard"><form onSubmit={handleSubmit} className="formGrid"><label>Your name<input name="name" autoComplete="name" required /></label><label>Phone / WhatsApp<input name="phone" type="tel" autoComplete="tel" required /></label><label className="fieldFull">Vehicle<input name="vehicle" placeholder="e.g. Toyota Corolla, registration if useful" required /></label><label className="fieldFull">What is wrong?<textarea name="problem" placeholder="Flat tyre, puncture, needs fitting, pressure check, tyre needed..." required /></label><label className="fieldFull">Location or landmark <span>(optional)</span><input name="locationText" placeholder="Road, neighbourhood, landmark or at the shop" /></label><label className="fieldFull">Anything else? <span>(optional)</span><textarea name="notes" placeholder="Tyre size, urgency, preferred contact or other useful detail" /></label>{error && <p className="formError fieldFull" role="alert">{error}</p>}<div className="fieldFull"><button className="button buttonPrimary submitButton" type="submit" disabled={busy}>{busy ? "Saving request…" : "Send Request"}</button></div><p className="formTruth fieldFull">Online: the request is sent to the Namane Tyres queue. Offline: Firestore may save it on this device and wait for synchronization. The app will tell you which state applies.</p></form></div></div></main>;
 }
