@@ -1,203 +1,136 @@
-# THE MEATING PLACE — Agent Operating Contract
+# NAMANE TYRES — Agent Operating Contract
 
 ## Product
-THE MEATING PLACE — CAR WASH & BRAAI is a real customer-facing business product, not a demo or QA application.
+Namane Tyres is the real customer-facing digital front door and lightweight operating surface for Thapelo Namane Tyre Fitting Business in Gaborone, Botswana.
 
-Brand:
-- THE MEATING PLACE
-- CAR WASH & BRAAI
-- GOOD FOOD, GOOD MOOD.
-- LET'S MEAT & EAT.
+Business location:
+- Plot 16739, Gaborone West Phase 1, Gaborone, Botswana
+- Roadside, opposite Padre Pio Medical Centre
 
-The product should help the business turn website visitors into organized customer requests while giving the owner/team a practical operational surface for managing those requests.
+Core services: tyre fitting, puncture repair, pressure checks, tyre sales, light wash services and roadside assistance.
 
-The website must remain relevant to the actual business. Do not add generic SaaS features, invented services, fabricated promotions, fake testimonials, fake availability, or technology-led features that do not help the business sell, serve, or operate.
+This is a real small-business product, not a demo, template, QA app, or generic SaaS.
 
 ## Roles
 - Product owner / final reviewer: user
 - Technical navigator + implementation: ChatGPT through repository tooling
 - GitHub is the source of truth
-- No Codex dependency for this project
+- No Codex dependency
 
 ## Workflow
-START → BUILD → VERIFY → CHECKPOINT → CONTINUE/RECOVER.
+START → INSPECT → BUILD → VERIFY → CHECKPOINT → CONTINUE/RECOVER.
 
 Golden rule: **Unexpected result = STOP → inspect reality → then act.**
 
-Do not blindly patch production. Inspect the current repository, Firebase project, deployed state, and relevant business workflow before changing code.
+Before changing code, inspect the repository, Git state, Firebase configuration, deployed state when relevant, and the actual business workflow. Do not blindly patch production.
 
-## Business relevance rule
-Every new feature, page, piece of copy, or data model must help at least one of these:
-1. Explain what THE MEATING PLACE actually offers.
-2. Let customers request a real service: car wash, food/braai, catering/group service, private event, or another confirmed business service.
-3. Help the owner/team receive, understand, follow up on, or manage a request.
-4. Present real current offers, services, media, or operating information.
-5. Reduce repetitive manual work without pretending an action happened when it did not.
+## Product model
+Customer → Request Assistance / Service Enquiry → Owner → Job → Complete
 
-If it does none of these, it is probably out of scope.
+Tyre inventory → Customer enquiry → Request → Job / Sale
+
+First useful workflow:
+1. Customer opens Namane Tyres.
+2. Customer chooses Request Help.
+3. Customer provides name, phone, vehicle, problem, notes and location where useful.
+4. The app truthfully saves the request online or queues it offline.
+5. Owner sees the request in Operations.
+6. Owner accepts it and moves the job through the real work.
+7. Job is completed.
 
 ## Public customer experience
-The public website is conversion-first. It should clearly communicate the real THE MEATING PLACE brand, services, current real offers, customer-facing media, booking/request CTA, and direct contact options.
+The public site must identify Namane Tyres and its Gaborone location, make Request Help prominent, explain real services without inventing prices or guarantees, provide direct phone/WhatsApp fallbacks when configured, work on a phone first, and remain useful when connectivity is poor.
 
-The booking flow is a **request**, not an instant confirmed booking. Customers must not be required to create a Firebase account merely to submit a request.
+Do not require a customer account just to request help.
 
-Customer-facing copy must use business language, not internal terms such as Firebase, Firestore, QA, seed data, auth state, development mode, or browser storage.
+Do not invent opening hours, prices, tyre brands, stock, testimonials, promotions, response times, emergency guarantees, or contact numbers.
 
-## Booking workflow
-Customer → structured request form → Firestore `bookingRequests` → owner/team review → follow-up → operational status.
+## Request workflow
+Operational statuses:
+- New
+- Accepted
+- In Progress
+- Ready / Awaiting Customer
+- Complete
+- Cancelled
 
-Current request categories include Food, Car Wash, Braai, Catering / Group, Private Event, and Other.
+A request submission is not the same as business acceptance.
 
-Collect only information genuinely useful for handling the request. Optional fields should not unnecessarily block submission.
+Customer-facing truth:
+- Online save: **Sent to Namane Tyres.**
+- Offline queued save: **Saved on this phone — waiting to send.**
+- Failure: explain that the request was not recorded and provide a human fallback.
 
-A successful request must produce an honest acknowledgement and usable request reference. Never claim a booking is confirmed unless the business has actually confirmed it.
+Never say the business received a request until synchronization/receipt is actually established.
 
-If Firebase fails, show a truthful failure state. Never silently discard a request or pretend it was received.
+Capture GPS only with user permission. If location permission is denied or unavailable, the request can still be submitted with a useful text location/notes.
 
-## Owner/admin operations
-`/admin` is the real THE MEATING PLACE Operations surface.
+## Offline-first PWA
+Offline is a product capability, not a fake status.
 
-It should support the actual workflow:
-- incoming booking/customer requests
-- complete request details at a glance
-- requests needing attention
-- customer contact details/actions
-- request status management
-- current offerings/services
-- specials/promotions
-- homepage/customer-facing media where supported
-- later: upcoming events, catering/group work, operational scheduling, customer history, and reporting where useful
+Maintain:
+- installable PWA manifest
+- registered service worker
+- cached app shell
+- offline route
+- cached public assets after successful visits
+- Firestore persistent local cache for structured data
+- queued customer request writes through Firestore supported offline persistence
+- visible online/offline state
+- truthful queued/synchronized wording
 
-Do not build an abstract CRM or ERP. Keep admin functionality tied to how THE MEATING PLACE actually operates.
+The service worker must not cache private Firebase API responses indiscriminately. Do not cache large videos or media blobs in the app shell. Cache public static assets only after successful network responses.
 
-Baseline request statuses may be: New → Contacted → Confirmed → Completed / Cancelled.
-
-Do not mark a request confirmed merely because a customer submitted it.
+Previously visited public pages remain available. A new request may be queued by Firestore when supported. Admin data may be readable from Firestore local cache after it has previously been loaded. Actions requiring connectivity must say so rather than pretending they completed.
 
 ## Firebase
-The project uses the **Meating Place Firebase project**:
+Use the dedicated Firebase project: namane-tyres.
 
-`meating-place-34321`
+Never use Meating Place, Avram, Translend, AdminHub, or another project's Firebase identifiers, credentials, collections, seed data, or rules.
 
-Never use Avram, Translend, AdminHub, or another project's Firebase credentials, identifiers, rules, or data here.
-
-The repository `.firebaserc` targets `meating-place-34321`.
-
-Browser Firebase configuration is environment-driven through `NEXT_PUBLIC_FIREBASE_*` variables. Never hard-code secrets or commit `.env.local`.
-
-## Firestore collections
-Current production-relevant collections include:
-- `admins`
-- `bookingRequests`
-- `offerings`
-- `specials`
-- `homeMedia`
-
-These are shared business data. Do not create duplicate browser-only sources of truth for owner-managed data.
+Browser Firebase configuration must use NEXT_PUBLIC_FIREBASE_* environment variables. Never commit .env.local, service-account JSON, or private credentials.
 
 ## Firestore authorization
-Customer booking creation is intentionally public because customers do not need Firebase Auth to request a booking.
+Recommended boundary:
+- public customer request create only, with strict field validation
+- customer cannot read/update/delete requests
+- admins/{uid} is provisioned outside the client with role owner or staff
+- owner/staff can read and update operational requests
+- inventory and other private operational data are admin-only unless a future public read requirement is explicitly designed
 
-Intended rule boundary:
-- `bookingRequests`: public `create`; private read/update/delete for authorized admins
-- `admins`: role records provisioned outside the client application
-- `offerings`: public read; admin-managed writes
-- `specials`: public read when active/published; admin-managed writes
-- `homeMedia`: public read when active/published; admin-managed writes
-- private operational/customer data: authorized admin access only
-
-Admin authorization uses Firebase Authentication plus an `admins/{uid}` Firestore document.
-
-The owner admin document uses the authenticated Firebase Auth UID as its document ID and contains `role: "owner"`. Staff may use `role: "staff"`. Never add self-service admin signup.
-
-## Current Firebase admin setup
-The Meating Place Firebase project currently has the owner admin document with `role: "owner"`.
-
-This is Firebase-side configuration, not application code. Do not add code to recreate it.
-
-The Firestore rules have been placed in the correct **Meating Place** Firebase project. An earlier permission-denied investigation was caused by rules being edited in a different Firebase project. Always verify the active project ID before changing Firebase rules or data.
-
-## Security requirements
-- Customers may create booking requests without signing in.
-- Customers must not read, update, or delete booking requests.
-- Customers must not write admin role records.
-- Customers must not write offerings, specials, or homepage media.
-- Admin/staff access requires Firebase Authentication plus a matching `admins/{uid}` role record.
-- Never expose private customer/admin data publicly.
-- Never weaken Firestore rules merely to make a UI error disappear.
-- Test allowed and denied paths before declaring security work complete.
+Never weaken rules to hide a UI or configuration problem.
 
 ## Data integrity
-Historical requests must remain understandable even if offerings, prices, or promotions later change.
+Keep request records understandable after the business changes its catalogue. Preserve customer-entered service/tyre text or snapshots rather than depending only on mutable current inventory.
 
-When appropriate, store snapshots of customer-facing service/offer information used at request time rather than relying only on mutable current data.
-
-Do not fabricate prices, discounts, capacity, availability, opening hours, event packages, testimonials, or guarantees.
-
-## Content relevance
-Represent the real business rather than generic restaurant/car-wash assumptions.
-
-Before adding or changing services, prices, specials, business claims, testimonials, photos/videos, opening hours, contact details, event capabilities, or booking requirements, use information supplied by the business/project as the source of truth. If something is unknown, leave it configurable or ask for the real value rather than inventing one.
-
-The homepage should remain conversion-first. Do not replace useful business messaging with excessive technical explanation or generic template content.
+Use server-authoritative timestamps where practical, but do not make the offline customer flow depend on a server round trip just to display a truthful local queued state.
 
 ## Media
-Customer-facing images/videos should use Firebase Storage when managed through the application, with metadata in Firestore. Do not store large media blobs directly in Firestore. Admin media controls must use the same authenticated admin authorization model.
+Business media may live under public/namane-assets/ for stable static content or Firebase Storage when owner-managed media is actually needed. Do not put large media blobs in Firestore. Do not make a child/family image the public identity of the business or expose unnecessary personal information.
 
-## PWA
-Maintain a truthful installable/offline experience where supported. Never tell a customer or owner that a booking, upload, notification, payment, or other remote action completed when it has not actually synchronized or been confirmed.
+## Admin / Operations
+/admin is the real owner/staff operations surface. Keep it small and practical: incoming assistance requests, request details and contact actions, status changes, tyre inventory and useful operational notes.
 
-Firebase Storage uploads require connectivity unless a real supported mechanism exists; never fake offline uploads.
+Do not build a generic CRM, ERP, accounting system, fake payment flow, or customer account platform.
 
-## Analytics
-The project uses Vercel Analytics and Speed Insights. Analytics should measure real product usage and must not be claimed as live until the deployed production integration is verified.
-
-Prefer useful business questions: are visitors reaching booking, which request categories are used, are requests successfully submitted, and are people returning?
-
-## Current technical state
-- Next.js 15.5.15
+## Technical baseline
+- Next.js 15
 - React 19
-- Firebase client + Admin SDK dependencies
-- Firestore shared booking data store
-- Vercel deployment platform
-- Firebase project: `meating-place-34321`
-- Production target: `meating-place.vercel.app`
+- TypeScript
+- Firebase Auth
+- Firestore with persistent local cache
+- Firebase Storage where actually needed
+- Vercel
+- installable PWA + service worker
+- Vercel Analytics / Speed Insights
 
-The previous customer booking `permission-denied` was traced to Firestore rules being edited in the wrong Firebase project. The correct Meating Place project now has the intended rules, and the owner admin document is provisioned correctly.
-
-Do not add an unnecessary authentication dependency to customer booking. The intended architecture is public booking creation with authenticated private administration.
-
-## CI / build discipline
-Quality checks should include:
-- `npx tsc --noEmit`
-- `npm run lint`
-- `npm run build`
-
-If a build fails because Firebase environment variables are absent from CI, fix the environment/configuration path rather than hard-coding credentials into source code.
-
-Never commit Firebase secrets or `.env.local`.
-
-## Scope discipline
-Do not add unrelated fleet/logistics features, payroll, generic ERP/accounting systems, fake payment integrations, fake WhatsApp/SMS/email delivery, unnecessary customer account registration, unrelated AI features, fabricated business claims, or technology features merely because they are possible.
-
-Future customer history, event management, invoicing, payment tracking, loyalty, referrals, notifications, and reporting are acceptable only when they clearly support the actual Meating Place workflow and are backed by real data/integrations.
+## Build discipline
+Before a meaningful checkpoint run npx tsc --noEmit, npm run lint and npm run build. Do not run npm audit fix --force as blind cleanup. Never commit .env.local or private Firebase credentials.
 
 ## Repository boundaries
-Other projects may be used as technical reference only where genuinely useful. Do not modify another repository while working here.
+Other Admin Hub projects may be technical references only. Active domain terminology, metadata, routes, navigation, Firebase config, service worker cache names and customer-facing errors must be Namane Tyres.
 
-Do not import another project's Firebase IDs, credentials, domain terminology, customer data, or business assumptions.
+## Final review
+A feature is complete only when it represents the real Namane Tyres business, the customer flow is understandable, offline/online states are truthful, Firebase uses the dedicated namane-tyres project, Firestore rules protect private data, no fabricated business facts were introduced, checks are addressed, and the deployed result matches customer → owner → job.
 
-No Avram, Translend, AdminHub, or unrelated project terminology may remain in active Meating Place UI, metadata, routes, navigation, or customer-facing error messages.
-
-## Final review standard
-Before calling a feature complete, verify:
-1. It is relevant to THE MEATING PLACE's actual business.
-2. The public customer experience is understandable without technical knowledge.
-3. The owner/admin workflow is practical.
-4. Firebase uses the intended project and authorization boundary.
-5. Errors are truthful.
-6. No fabricated business data was introduced.
-7. TypeScript, lint, and build checks are addressed where applicable.
-8. The deployed result matches the intended production workflow.
-
-The goal is not to build the most complicated system. The goal is to build a useful digital operating surface that helps THE MEATING PLACE get customers, capture complete requests, and run the business with less repetitive manual work.
+The goal is a useful digital front door and lightweight operating surface for a real tyre business — not the most complicated system possible.
