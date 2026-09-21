@@ -134,3 +134,24 @@ Other Admin Hub projects may be technical references only. Active domain termino
 A feature is complete only when it represents the real Namane Tyres business, the customer flow is understandable, offline/online states are truthful, Firebase uses the dedicated namane-tyres project, Firestore rules protect private data, no fabricated business facts were introduced, checks are addressed, and the deployed result matches customer → owner → job.
 
 The goal is a useful digital front door and lightweight operating surface for a real tyre business — not the most complicated system possible.
+
+
+## Contacts and admin directory
+Contacts are an owner-managed business directory, not app users:
+- Existing WhatsApp/business contacts may be imported by an authorized admin.
+- A contact becomes operationally relevant when a request/job is associated with the same phone number.
+- Do not automatically create Firebase Auth users from contact imports.
+- Owner/staff can add, edit, search and delete contacts from /admin.
+- Contact history is derived from assistance requests matching the normalized phone number.
+- WhatsApp VCF imports are parsed locally in the authenticated browser.
+- Contact photos are intentionally ignored.
+- The original VCF and generated contact exports are private and must never be committed.
+
+The inspected WhatsApp export contained 112 vCards, 112 valid Botswana phone numbers, 95 unique phone numbers and 16 duplicate phone-number groups. Re-importing must update existing phone-keyed records rather than create duplicates.
+
+## Admin authentication
+- V1 uses Firebase email/password authentication only.
+- Google sign-in is intentionally deferred.
+- Access requires an authenticated UID with admins/{uid}.role equal to owner or staff.
+- Auth users and their admin role documents are provisioned outside the public client; the app must not expose self-registration or client-side admin provisioning.
+
