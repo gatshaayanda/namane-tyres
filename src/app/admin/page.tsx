@@ -17,6 +17,7 @@ import {
   type Contact,
   type ContactInput,
   type RequestStatus,
+  normalizePhone,
   type TyreInventoryItem,
   REQUEST_STATUSES,
 } from "@/lib/firebase/data";
@@ -72,9 +73,9 @@ function Dashboard() {
   }, [contacts, contactSearch]);
 
   function requestHistory(phone: string) {
-    const normalized = phone.replace(/[^\d+]/g, "");
+    const normalized = normalizePhone(phone);
     return requests
-      .filter((request) => request.phone.replace(/[^\d+]/g, "") === normalized)
+      .filter((request) => normalizePhone(request.phone) === normalized)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
@@ -226,7 +227,7 @@ function Dashboard() {
               {contactDraft ? (
                 <>
                   <div className="panelHeading"><div><span className="kicker">{editingContactId ? "Edit contact" : "New contact"}</span><h2>{editingContactId ? "Update customer contact" : "Add customer contact"}</h2></div></div>
-                  <ContactForm draft={contactDraft} onChange={setContactDraft} />
+                  <ContactForm draft={contactDraft} onChange={setContactDraft} editing={Boolean(editingContactId)} />
                   <div className="actions"><button className="button buttonPrimary" onClick={() => void saveContactRecord()}>Save contact</button><button className="button buttonLight" onClick={() => { setContactDraft(null); setEditingContactId(null); }}>Cancel</button></div>
                 </>
               ) : currentContact ? (
@@ -270,10 +271,10 @@ function Dashboard() {
   );
 }
 
-function ContactForm({ draft, onChange }: { draft: ContactInput; onChange: (value: ContactInput) => void }) {
+function ContactForm({ draft, onChange, editing }: { draft: ContactInput; onChange: (value: ContactInput) => void; editing: boolean }) {
   return <div className="formGrid">
     <label>Name<input value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} /></label>
-    <label>Phone / WhatsApp<input value={draft.phone} onChange={(e) => onChange({ ...draft, phone: e.target.value })} /></label>
+    <label>Phone / WhatsApp<input disabled={editing} value={draft.phone} onChange={(e) => onChange({ ...draft, phone: e.target.value })} /></label>
     <label>Business name <span>(optional)</span><input value={draft.businessName} onChange={(e) => onChange({ ...draft, businessName: e.target.value })} /></label>
     <label>WhatsApp Business<select value={String(draft.whatsappBusiness)} onChange={(e) => onChange({ ...draft, whatsappBusiness: e.target.value === "true", whatsapp: true })}><option value="false">No</option><option value="true">Yes</option></select></label>
     <label className="fieldFull">Business description <span>(optional)</span><textarea value={draft.businessDescription} onChange={(e) => onChange({ ...draft, businessDescription: e.target.value })} /></label>
