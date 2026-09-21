@@ -8,3 +8,8 @@ out/
 *.log
 firestore-debug.log
 .DS_Store
+
+# Private contact imports — never commit WhatsApp contact data.
+scripts/import/contacts/*.vcf
+scripts/import/contacts/*.csv
+scripts/import/contacts/*.json
