@@ -106,7 +106,7 @@ Keep request records understandable after the business changes its catalogue. Pr
 Use server-authoritative timestamps where practical, but do not make the offline customer flow depend on a server round trip just to display a truthful local queued state.
 
 ## Media
-Business media may live under public/namane-assets/ for stable static content or Firebase Storage when owner-managed media is actually needed. Do not put large media blobs in Firestore. Do not make a child/family image the public identity of the business or expose unnecessary personal information.
+Business media may live under public/namane-assets/ for stable static content or UploadThing when owner-managed job media is needed. Do not put large media blobs in Firestore. Do not make a child/family image the public identity of the business or expose unnecessary personal information.
 
 ## Admin / Operations
 /admin is the real owner/staff operations surface. Keep it small and practical: incoming assistance requests, request details and contact actions, status changes, tyre inventory and useful operational notes.
@@ -175,12 +175,12 @@ Each job receives an unguessable publicShareId. The owner can copy a /job/share/
 ### Job progress photos
 - Admin/staff can add progress photos from the job record.
 - Images are compressed on the device before upload to reduce mobile data/storage use.
-- Online: photo uploads to Firebase Storage and its metadata is written to the private job record and public share record.
+- Online: photo uploads to UploadThing and its returned public CDN URL plus metadata are written to the private job record and public share record.
 - Offline: the compressed photo is queued in browser IndexedDB and clearly shown as waiting to sync. It is uploaded automatically when connectivity returns or manually via Sync queued photos.
-- Firebase Storage is the media store. Never put image blobs in Firestore.
+- UploadThing is the media store for job progress photos. Never put image blobs in Firestore.
 - Public job progress images are intentionally readable without authentication because the customer share link is the access mechanism. The share ID must be unguessable and public pages must not expose phone numbers or private admin notes.
 - Do not claim a photo was shared/uploaded until the Storage upload and Firestore metadata write succeed. Offline wording must say it is saved on this phone and waiting to sync.
-- Service worker/app-shell caching must not cache job media blobs.
+- Service worker/app-shell caching must not cache job media blobs. UploadThing CDN URLs are deliberately public because the unguessable customer share ID is the access mechanism.
 
 ### Job sharing SOP
 1. Create/open the job.
