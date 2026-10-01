@@ -2,16 +2,11 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    function isAdmin() {
-      return request.auth != null
-        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff'];
-    }
-
-    match /namaneMedia/{fileName} {
+    function isAdmin() { return request.auth != null && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff']; }
+    match /jobProgress/{shareId}/{fileName} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 12 * 1024 * 1024
-        && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('video/.*'));
+      allow write: if isAdmin() && request.resource.size < 10 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
     }
     match /{allPaths=**} { allow read, write: if false; }
   }

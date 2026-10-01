@@ -155,3 +155,43 @@ The inspected WhatsApp export contained 112 vCards, 112 valid Botswana phone num
 - Access requires an authenticated UID with admins/{uid}.role equal to owner or staff.
 - Auth users and their admin role documents are provisioned outside the public client; the app must not expose self-registration or client-side admin provisioning.
 
+
+
+## Jobs, progress sharing and customer-facing updates
+Jobs are the owner-controlled work record behind real customer work. A job can be created manually, from an assistance request, or from a known contact.
+
+Job workflow:
+- New
+- Accepted
+- In Progress
+- Ready / Awaiting Customer
+- Complete
+- Cancelled
+
+A job records customer name/phone, vehicle, service, problem, notes, amount, payment status and operational timestamps as they are added. Do not expose the customer's phone number on the public job view.
+
+Each job receives an unguessable publicShareId. The owner can copy a /job/share/{publicShareId} link and send it to the customer. The public page contains only customer-safe job information and progress photos explicitly uploaded for that job.
+
+### Job progress photos
+- Admin/staff can add progress photos from the job record.
+- Images are compressed on the device before upload to reduce mobile data/storage use.
+- Online: photo uploads to Firebase Storage and its metadata is written to the private job record and public share record.
+- Offline: the compressed photo is queued in browser IndexedDB and clearly shown as waiting to sync. It is uploaded automatically when connectivity returns or manually via Sync queued photos.
+- Firebase Storage is the media store. Never put image blobs in Firestore.
+- Public job progress images are intentionally readable without authentication because the customer share link is the access mechanism. The share ID must be unguessable and public pages must not expose phone numbers or private admin notes.
+- Do not claim a photo was shared/uploaded until the Storage upload and Firestore metadata write succeed. Offline wording must say it is saved on this phone and waiting to sync.
+- Service worker/app-shell caching must not cache job media blobs.
+
+### Job sharing SOP
+1. Create/open the job.
+2. Confirm customer, vehicle and work details.
+3. Save the job.
+4. Copy the customer progress link or open the shared view to verify it.
+5. Add progress photos with short useful captions such as "Puncture found" or "New tyre fitted".
+6. Send the same link to the customer through the normal human channel, such as WhatsApp.
+7. Update the job status as physical work changes.
+8. Before Complete, record amount/payment status where known.
+9. Leave the customer progress page showing the latest safe progress information.
+
+### Operational principle
+The app is the record of work, not a replacement for human communication. WhatsApp/phone remain the human channel; the share link gives the customer a clear, current view of work progress.
