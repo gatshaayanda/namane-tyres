@@ -195,3 +195,16 @@ Each job receives an unguessable publicShareId. The owner can copy a /job/share/
 
 ### Operational principle
 The app is the record of work, not a replacement for human communication. WhatsApp/phone remain the human channel; the share link gives the customer a clear, current view of work progress.
+
+
+## Offline hardening checkpoint — October 2026
+- The PWA has separate shell, static and public caches with bounded retention.
+- The service worker never caches /api/ responses or Firebase/private operational data. Firestore persistent local cache remains the source of truth for structured offline data.
+- Admin route shells may be cached so an installed Operations app can open without internet; authentication and Firestore authorization still control access and private data.
+- Public job-share pages use bounded network-first caching because their projection is deliberately customer-safe and contains no phone number.
+- Service-worker installation is non-blocking: shell precaching is best effort and does not require a large video/media download.
+- Service-worker updates must not rely on automatic skipWaiting. The existing explicit update message is retained so an active work session is not unexpectedly replaced.
+- Browser persistent storage is requested best-effort; the app remains functional when the browser declines.
+- Job progress photos are compressed before storage, kept out of Cache Storage, and queued in IndexedDB when offline. The photo outbox is bounded to 40 items and reports when full rather than silently consuming unbounded device storage.
+- Offline wording must distinguish: saved on this phone, waiting to sync, synced/uploaded, and received by Namane Tyres. A customer share link is not considered server-visible until the job has synchronized.
+- Do not add Background Sync as a dependency unless a concrete requirement appears; the current reconnect/online flush path is deliberately simple and explicit.
