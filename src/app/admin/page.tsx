@@ -22,7 +22,6 @@ import {
   REQUEST_STATUSES,
 } from "@/lib/firebase/data";
 import { parseWhatsAppVCard } from "@/lib/vcard";
-import { createJob } from "@/lib/firebase/data";
 
 function Dashboard() {
   const [tab, setTab] = useState<"requests" | "contacts" | "inventory">("requests");
