@@ -1,70 +1,122 @@
-const CACHE_NAME = "namane-tyres-shell-v4";
-const APP_SHELL = ["/", "/book", "/offline", "/icon.svg"];
-const PUBLIC_MEDIA = [
-  "/namane-assets/work-location.jpg",
-  "/namane-assets/passing-car.jpg",
-  "/namane-assets/zoom-in-work-on-tyres.mp4",
-];
+const CACHE_VERSION = "v5";
+const SHELL_CACHE = `namane-shell-${CACHE_VERSION}`;
+const STATIC_CACHE = `namane-static-${CACHE_VERSION}`;
+const PUBLIC_CACHE = `namane-public-${CACHE_VERSION}`;
+const PREFIX = "namane-";
+const APP_SHELL = ["/", "/book", "/offline", "/admin", "/admin/jobs", "/icon.svg", "/manifest.webmanifest"];
 
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+self.addEventListener("install", (event) => {
+  event.waitUntil(precacheShell());
 });
 
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)),
-      ))
-      .then(() => {
-        // Pre-cache the small public images immediately. The video is attempted in
-        // the background so installation itself is not blocked by a large download.
-        return caches.open(CACHE_NAME).then(cache => {
-          void cache.addAll(PUBLIC_MEDIA).catch(() => {
-            // If the device is offline or the video download is interrupted,
-            // normal fetch handling below can retry when connectivity returns.
-          });
-        });
-      })
-      .then(() => self.clients.claim()),
-  );
+async function precacheShell() {
+  const shell = await caches.open(SHELL_CACHE);
+  const staticCache = await caches.open(STATIC_CACHE);
+  const discovered = new Set();
+  for (const path of APP_SHELL) {
+    try {
+      const request = new Request(path, { cache: "reload" });
+      const response = await fetch(request);
+      if (!response.ok) continue;
+      await shell.put(request, response.clone());
+      if ((response.headers.get("content-type") || "").includes("text/html")) {
+        const html = await response.text();
+        for (const match of html.matchAll(/(?:src|href)=["'](\/_next\/static\/[^"']+)["']/g)) discovered.add(match[1]);
+      }
+    } catch {}
+  }
+  await Promise.all([...discovered].map(async (path) => {
+    try {
+      const response = await fetch(new Request(path, { cache: "reload" }));
+      if (response.ok) await staticCache.put(path, response);
+    } catch {}
+  }));
+  await trimCache(STATIC_CACHE, 120);
+}
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith(PREFIX) && ![SHELL_CACHE, STATIC_CACHE, PUBLIC_CACHE].includes(key)).map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET" || !request.url.startsWith(self.location.origin)) return;
+  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
   const url = new URL(request.url);
+  const isNavigation = request.mode === "navigate" || request.headers.get("accept")?.includes("text/html");
 
-  if (url.pathname.startsWith("/_next/")) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok) void caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-      return response;
-    })));
+  // APIs and Firebase responses are network-only. Private operational data is
+  // persisted by Firestore's own offline cache, never by Cache Storage.
+  if (url.pathname.startsWith("/api/")) return;
+
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/namane-assets/") ||
+      url.pathname.startsWith("/images/") || url.pathname.startsWith("/fonts/") ||
+      url.pathname === "/manifest.webmanifest" || url.pathname === "/icon.svg" ||
+      /\.(?:css|woff2?|ttf|otf|png|jpe?g|webp|svg|ico|avif)$/i.test(url.pathname)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE, 120));
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(fetch(request).then(response => {
-      if (response.ok) void caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-      return response;
-    }).catch(() => caches.match(request).then(cached => cached || caches.match(url.pathname) || caches.match("/offline"))));
+  // Cache the safe application HTML shell, including admin route shells. The
+  // HTML contains no private Firestore records; auth and Firestore still gate
+  // and populate Operations. Never cache the private rendered data response.
+  if (isNavigation && (url.pathname === "/admin" || url.pathname.startsWith("/admin/"))) {
+    event.respondWith(fetch(request).catch(() => caches.match(request).then((cached) =>
+      cached || caches.match("/admin").then((fallback) => fallback || caches.match("/offline"))
+    )));
     return;
   }
 
-  const publicAsset = ["/namane-assets/", "/images/", "/fonts/"].some(prefix => url.pathname.startsWith(prefix))
-    || /\.(?:css|woff2?|ttf|otf|png|jpe?g|webp|svg|ico|avif|mp4|webm)$/i.test(url.pathname);
-
-  if (publicAsset) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok) void caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-      return response;
-    })));
+  // Public job progress can be viewed from a previously loaded link while
+  // offline. It contains only customer-safe projection data.
+  if (isNavigation && url.pathname.startsWith("/job/share/")) {
+    event.respondWith(networkFirst(request, PUBLIC_CACHE, 24));
     return;
   }
 
-  event.respondWith(caches.match(request).then(cached => cached || fetch(request)));
+  if (isNavigation) event.respondWith(networkFirst(request, PUBLIC_CACHE, 24));
 });
+
+async function cacheFirst(request, cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      await trimCache(cacheName, maxEntries);
+    }
+    return response;
+  } catch {
+    return Response.error();
+  }
+}
+
+async function networkFirst(request, cacheName, maxEntries) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(request, response.clone());
+      await trimCache(cacheName, maxEntries);
+    }
+    return response;
+  } catch {
+    return (await caches.match(request)) || (await caches.match("/offline")) || Response.error();
+  }
+}
+
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  await Promise.all(keys.slice(0, keys.length - maxEntries).map((request) => cache.delete(request)));
+}
