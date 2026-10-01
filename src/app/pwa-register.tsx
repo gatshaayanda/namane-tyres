@@ -9,6 +9,7 @@ export default function PwaRegister() {
 
   useEffect(() => {
     setOffline(!navigator.onLine);
+
     const online = () => setOffline(false);
     const offlineNow = () => setOffline(true);
     const installPrompt = (event: Event) => {
@@ -16,10 +17,21 @@ export default function PwaRegister() {
       setDeferredPrompt(event as BeforeInstallPromptEvent);
       setInstallable(true);
     };
+
     window.addEventListener("online", online);
     window.addEventListener("offline", offlineNow);
     window.addEventListener("beforeinstallprompt", installPrompt);
-    if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+
+    // Best-effort durable browser storage. Firebase IndexedDB persistence and
+    // the job-photo outbox remain usable even when the browser declines this.
+    if ("storage" in navigator && "persist" in navigator.storage) {
+      void navigator.storage.persist().catch(() => false);
+    }
+
     return () => {
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offlineNow);
@@ -35,7 +47,10 @@ export default function PwaRegister() {
     setInstallable(false);
   }
 
-  return <>{offline && <div className="offlineBanner" role="status">Offline mode · saved pages remain available. New requests may be queued on this device and sent when you reconnect.</div>}{installable && <button className="pwaInstall" type="button" onClick={() => void install()}>Install Namane Tyres</button>}</>;
+  return <>
+    {offline && <div className="offlineBanner" role="status">Offline mode · saved work stays on this device. New requests and job changes will sync when connection returns.</div>}
+    {installable && <button className="pwaInstall" type="button" onClick={() => void install()}>Install Namane Tyres</button>}
+  </>;
 }
 
 declare global {
