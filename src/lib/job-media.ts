@@ -21,8 +21,8 @@ async function uploadPending(item:PendingPhoto):Promise<JobPhoto>{
   const file=new File([item.blob],`namane-${item.shareId}-${item.id}.jpg`,{type:"image/jpeg"});
   const result=await uploadFiles("jobProgress",{files:[file],headers:{authorization:`Bearer ${token}`}});
   const uploaded=result?.[0];
-  if(!uploaded?.ufsUrl) throw new Error("UploadThing did not return a usable image URL.");
-  const photo:JobPhoto={id:item.id,jobId:item.jobId,shareId:item.shareId,storagePath:uploaded.key,url:uploaded.ufsUrl,caption:item.caption,createdAt:item.createdAt};
+  if(!uploaded?.url) throw new Error("UploadThing did not return a usable image URL.");
+  const photo:JobPhoto={id:item.id,jobId:item.jobId,shareId:item.shareId,storagePath:uploaded.key,url:uploaded.url,caption:item.caption,createdAt:item.createdAt};
   await saveJobPhoto(photo);
   await removePending(item.id);
   return photo;
