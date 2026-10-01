@@ -22,6 +22,7 @@ import {
   REQUEST_STATUSES,
 } from "@/lib/firebase/data";
 import { parseWhatsAppVCard } from "@/lib/vcard";
+import { createJob } from "@/lib/firebase/data";
 
 function Dashboard() {
   const [tab, setTab] = useState<"requests" | "contacts" | "inventory">("requests");
@@ -152,6 +153,7 @@ function Dashboard() {
           <div className="adminHeaderActions">
             <Link className="button buttonLight" href="/">Public site</Link>
             <Link className="button buttonPrimary" href="/book">Request form</Link>
+            <Link className="button buttonPrimary" href="/admin/jobs">+ Add work / Job</Link>
           </div>
         </header>
 
@@ -166,6 +168,7 @@ function Dashboard() {
           <button className={tab === "requests" ? "active" : ""} onClick={() => setTab("requests")}>Requests</button>
           <button className={tab === "contacts" ? "active" : ""} onClick={() => setTab("contacts")}>Customer contacts</button>
           <button className={tab === "inventory" ? "active" : ""} onClick={() => setTab("inventory")}>Tyre inventory</button>
+          <Link className="adminTabLink" href="/admin/jobs">Jobs & progress</Link>
         </nav>
 
         {notice && <div className="adminToast" role="status">{notice}</div>}
@@ -243,6 +246,7 @@ function Dashboard() {
                   <div className="actions">
                     <a className="button buttonPrimary" href={"https://wa.me/" + currentContact.phone.replace(/\D/g, "")}>WhatsApp</a>
                     <a className="button buttonLight" href={"tel:" + currentContact.phone}>Call</a>
+                    <Link className="button buttonPrimary" href={"/admin/jobs?customer="+encodeURIComponent(currentContact.name)+"&phone="+encodeURIComponent(currentContact.phone)}>New job</Link>
                     <button className="button buttonLight" onClick={() => { setEditingContactId(currentContact.id); setContactDraft({ name: currentContact.name, phone: currentContact.phone, whatsapp: currentContact.whatsapp, whatsappBusiness: currentContact.whatsappBusiness, businessName: currentContact.businessName, businessDescription: currentContact.businessDescription, notes: currentContact.notes, source: currentContact.source }); }}>Edit</button>
                     <button className="button buttonLight" onClick={() => void deleteContact(currentContact.id).then(() => { setContacts((items) => items.filter((item) => item.id !== currentContact.id)); setSelectedContact(null); setNotice("Contact deleted."); }).catch(() => setNotice("Contact could not be deleted."))}>Delete</button>
                   </div>
