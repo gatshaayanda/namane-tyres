@@ -2,12 +2,9 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    function isAdmin() { return request.auth != null && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role in ['owner', 'staff']; }
-    match /jobProgress/{shareId}/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 10 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
-      allow delete: if isAdmin();
+    // Job progress photos now use UploadThing. Keep Firebase Storage closed.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
-    match /{allPaths=**} { allow read, write: if false; }
   }
 }
