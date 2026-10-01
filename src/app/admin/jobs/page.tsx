@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useState,useRef} from "react";
+import {useCallback,useEffect,useState,useRef} from "react";
 import {createJob,getJobPhotos,getJobs,updateJob,type Job,type JobPhoto,type JobStatus,type PaymentStatus,JOB_STATUSES,PAYMENT_STATUSES} from "@/lib/firebase/data";
 import {addJobPhoto,flushQueuedJobPhotos,getQueuedJobPhotoCount} from "@/lib/job-media";
 import AdminGate from "@/app/admin/admin-gate";
 function Jobs(){
  const [jobs,setJobs]=useState<Job[]>([]),[selected,setSelected]=useState<Job|null>(null),[draft,setDraft]=useState<Partial<Job>|null>(null),[photos,setPhotos]=useState<JobPhoto[]>([]),[caption,setCaption]=useState(""),[notice,setNotice]=useState(""),[online,setOnline]=useState(true),[queued,setQueued]=useState(0),[uploading,setUploading]=useState(false);const file=useRef<HTMLInputElement>(null);
  async function load(){try{setJobs(await getJobs());setQueued(await getQueuedJobPhotoCount())}catch{setNotice("Jobs could not be loaded. Previously cached data may still be available offline.")}}
- useEffect(()=>{setOnline(navigator.onLine);void load();const on=()=>{setOnline(true);void sync()};const off=()=>setOnline(false);addEventListener("online",on);addEventListener("offline",off);return()=>{removeEventListener("online",on);removeEventListener("offline",off)}},[]);
- async function sync(){const r=await flushQueuedJobPhotos();setQueued(r.remaining);if(r.uploaded){setNotice(r.uploaded+" queued photo"+(r.uploaded===1?"":"s")+" synced.");if(selected)setPhotos(await getJobPhotos(selected.id))}}
+ useEffect(()=>{setOnline(navigator.onLine);void load();const on=()=>{setOnline(true);void sync()};const off=()=>setOnline(false);addEventListener("online",on);addEventListener("offline",off);return()=>{removeEventListener("online",on);removeEventListener("offline",off)}},[sync]);
+ const sync=useCallback(async()=>{const r=await flushQueuedJobPhotos();setQueued(r.remaining);if(r.uploaded){setNotice(r.uploaded+" queued photo"+(r.uploaded===1?"":"s")+" synced.");if(selected)setPhotos(await getJobPhotos(selected.id))}},[selected]);
  function newJob(){setSelected(null);setPhotos([]);setDraft({customerName:"",phone:"",vehicle:"",service:"",problem:"",notes:"",status:"New",amount:"",paymentStatus:"Unpaid"})}
  async function save(){if(!draft?.customerName||!draft.phone||!draft.service){setNotice("Customer, phone and service are required.");return}try{const {job,writePromise}=createJob({customerName:draft.customerName,phone:draft.phone,vehicle:draft.vehicle||"",service:draft.service,problem:draft.problem||"",notes:draft.notes||"",status:(draft.status as JobStatus)||"New",amount:draft.amount||"",paymentStatus:(draft.paymentStatus as PaymentStatus)||"Unpaid"});await writePromise;setJobs(x=>[job,...x]);setSelected(job);setDraft(null);setNotice(online?"Job created. Customer progress link is ready.":"Job saved on this phone — waiting to sync.")}catch{setNotice("Job could not be saved.")}}
  async function open(job:Job){setSelected(job);setDraft(null);try{setPhotos(await getJobPhotos(job.id))}catch{setPhotos([])}}
