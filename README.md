@@ -53,7 +53,7 @@ The public site uses real Namane Tyres imagery rather than inherited template me
 - Next.js 15 / React 19 / TypeScript
 - Firebase Authentication
 - Cloud Firestore with persistent local cache
-- Firebase Storage rules ready for future owner-managed media
+- UploadThing for owner-managed job progress photos
 - Installable PWA + service worker
 - Vercel Analytics + Speed Insights
 - Vercel deployment from GitHub `main`
