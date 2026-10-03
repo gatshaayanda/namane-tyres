@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const jobId = new URL(request.url).searchParams.get("jobId");
     if (!jobId) return NextResponse.json({ error: "jobId is required." }, { status: 422 });
     const snapshot = await adminDb().collection("jobs").doc(jobId).collection("photos").get();
-    const photos = snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Record<string, unknown>) })).sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+    const photos = snapshot.docs.map((item) => { const data = item.data() as Record<string, unknown>; return { id: item.id, data }; }).sort((a, b) => String(b.data.createdAt ?? "").localeCompare(String(a.data.createdAt ?? ""))).map(({ id, data }) => ({ id, ...data }));
     return NextResponse.json({ photos });
   } catch (error) {
     return errorResponse(error);
