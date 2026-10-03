@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import {useCallback,useEffect,useState,useRef} from "react";
 import {createJob,getJobPhotos,getJobs,updateJob,type Job,type JobPhoto,type JobStatus,type PaymentStatus,JOB_STATUSES,PAYMENT_STATUSES} from "@/lib/firebase/data";
