@@ -1,7 +1,7 @@
 "use client";
 
 import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client";
 
 export const REQUEST_STATUSES = ["New","Accepted","In Progress","Ready / Awaiting Customer","Complete","Cancelled"] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
