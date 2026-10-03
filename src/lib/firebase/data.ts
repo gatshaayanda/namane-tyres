@@ -57,10 +57,7 @@ export async function updateJob(job:Job){
   return next;
 }
 export async function getJobPhotos(jobId:string){
-  if(navigator.onLine){
-    try{return (await adminRequest(`/api/admin/job-photos?jobId=${encodeURIComponent(jobId)}`)).photos as JobPhoto[];}
-    catch(error){console.warn("[Namane Tyres] server photo load failed; trying Firestore",error);}
-  }
+  if(navigator.onLine)return (await adminRequest(`/api/admin/job-photos?jobId=${encodeURIComponent(jobId)}`)).photos as JobPhoto[];
   const snapshot=await getDocs(collection(db,"jobs",jobId,"photos"));
   return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<JobPhoto,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
 }
