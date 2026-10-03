@@ -13,7 +13,8 @@ async function requireAdmin(request: Request) {
 
 function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : "Request failed.";
-  const status = message === "Unauthorized" ? 401 : message === "Operations access required." ? 403 : 400;
+  const status = message === "Unauthorized" ? 401 : message === "Operations access required." ? 403 : 500;
+  console.error("[admin/jobs]", error);
   return NextResponse.json({ error: message }, { status });
 }
 
