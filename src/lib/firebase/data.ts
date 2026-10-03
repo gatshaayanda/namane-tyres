@@ -34,8 +34,40 @@ export async function saveContact(input:ContactInput,id?:string){const phone=nor
 export async function deleteContact(id:string){await deleteDoc(doc(db,"contacts",id));}
 export async function importContacts(incoming:Array<Omit<Contact,"id"|"createdAt"|"updatedAt">>){const existingSnapshot=await getDocs(contactsCollection);const existingByPhone=new Map<string,Contact>();existingSnapshot.docs.forEach(item=>{const data=item.data() as Omit<Contact,"id">;existingByPhone.set(normalizePhone(data.phone),{id:item.id,...data});});const now=new Date().toISOString();const merged=new Map<string,Contact>();for(const raw of incoming){const phone=normalizePhone(raw.phone);if(!phone)continue;const existing=existingByPhone.get(phone);const next:Contact={id:existing?.id||phone,name:raw.name||existing?.name||"Unknown contact",phone,whatsapp:raw.whatsapp||existing?.whatsapp||false,whatsappBusiness:raw.whatsappBusiness||existing?.whatsappBusiness||false,businessName:raw.businessName||existing?.businessName||"",businessDescription:raw.businessDescription||existing?.businessDescription||"",notes:raw.notes||existing?.notes||"",source:raw.source||existing?.source||"whatsapp_import",createdAt:existing?.createdAt||now,updatedAt:now};merged.set(phone,next);}const batch=writeBatch(db);for(const contact of merged.values())batch.set(doc(db,"contacts",contact.id),contact,{merge:true});await batch.commit();return{imported:merged.size,totalExisting:existingSnapshot.size};}
 
-export async function getJobs(){const snapshot=await getDocs(jobsCollection);return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<Job,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));}
-export function createJob(input:JobInput){const id=crypto.randomUUID();const now=new Date().toISOString();const publicShareId=crypto.randomUUID().replace(/-/g,"");const job:Job={id,...input,createdAt:now,updatedAt:now,publicShareId};const writePromise=Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now})]);return{job,writePromise};}
-export async function updateJob(job:Job){const now=new Date().toISOString();const next={...job,updatedAt:now};await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now},{merge:true})]);return next;}
-export async function getJobPhotos(jobId:string){const snapshot=await getDocs(collection(db,"jobs",jobId,"photos"));return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<JobPhoto,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));}
-export async function saveJobPhoto(photo:JobPhoto){await Promise.all([setDoc(doc(db,"jobs",photo.jobId,"photos",photo.id),photo),setDoc(doc(db,"publicJobs",photo.shareId,"photos",photo.id),photo)]);}
+async function adminToken(){const user=auth.currentUser;if(!user)throw new Error("Your Operations session has expired. Sign in again.");return user.getIdToken();}
+async function adminRequest(path:string,init:RequestInit={}){const token=await adminToken();const response=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`,...(init.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(String(body.error||`Operations request failed (${response.status}).`));return body;}
+
+export async function getJobs(){
+  if(navigator.onLine){
+    try{return (await adminRequest("/api/admin/jobs")).jobs as Job[];}
+    catch(error){console.warn("[Namane Tyres] server job load failed; trying Firestore",error);}
+  }
+  const snapshot=await getDocs(jobsCollection);
+  return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<Job,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+}
+export function createJob(input:JobInput){
+  const id=crypto.randomUUID();const now=new Date().toISOString();const publicShareId=crypto.randomUUID().replace(/-/g,"");
+  const job:Job={id,...input,createdAt:now,updatedAt:now,publicShareId};
+  const writePromise=navigator.onLine
+    ? adminRequest("/api/admin/jobs",{method:"POST",body:JSON.stringify(job)}).then(()=>undefined)
+    : Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now})]).then(()=>undefined);
+  return{job,writePromise};
+}
+export async function updateJob(job:Job){
+  if(navigator.onLine)return (await adminRequest("/api/admin/jobs",{method:"PATCH",body:JSON.stringify(job)})).job as Job;
+  const now=new Date().toISOString();const next={...job,updatedAt:now};
+  await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now},{merge:true})]);
+  return next;
+}
+export async function getJobPhotos(jobId:string){
+  if(navigator.onLine){
+    try{return (await adminRequest(`/api/admin/job-photos?jobId=${encodeURIComponent(jobId)}`)).photos as JobPhoto[];}
+    catch(error){console.warn("[Namane Tyres] server photo load failed; trying Firestore",error);}
+  }
+  const snapshot=await getDocs(collection(db,"jobs",jobId,"photos"));
+  return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<JobPhoto,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+}
+export async function saveJobPhoto(photo:JobPhoto){
+  if(navigator.onLine){await adminRequest("/api/admin/job-photos",{method:"POST",body:JSON.stringify(photo)});return;}
+  await Promise.all([setDoc(doc(db,"jobs",photo.jobId,"photos",photo.id),photo),setDoc(doc(db,"publicJobs",photo.shareId,"photos",photo.id),photo)]);
+}
