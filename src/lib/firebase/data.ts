@@ -38,10 +38,7 @@ async function adminToken(){const user=auth.currentUser;if(!user)throw new Error
 async function adminRequest(path:string,init:RequestInit={}){const token=await adminToken();const response=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`,...(init.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(String(body.error||`Operations request failed (${response.status}).`));return body;}
 
 export async function getJobs(){
-  if(navigator.onLine){
-    try{return (await adminRequest("/api/admin/jobs")).jobs as Job[];}
-    catch(error){console.warn("[Namane Tyres] server job load failed; trying Firestore",error);}
-  }
+  if(navigator.onLine)return (await adminRequest("/api/admin/jobs")).jobs as Job[];
   const snapshot=await getDocs(jobsCollection);
   return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<Job,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
 }
