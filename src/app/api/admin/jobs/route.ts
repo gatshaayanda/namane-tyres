@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   try {
     await requireAdmin(request);
     const snapshot = await adminDb().collection("jobs").get();
-    const jobs = snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const jobs = snapshot.docs.map((item) => { const data = item.data() as Record<string, unknown>; return { id: item.id, data }; }).sort((a, b) => String(b.data.createdAt ?? "").localeCompare(String(a.data.createdAt ?? ""))).map(({ id, data }) => ({ id, ...data }));
     return NextResponse.json({ jobs });
   } catch (error) {
     return errorResponse(error);
