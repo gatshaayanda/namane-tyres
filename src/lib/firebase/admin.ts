@@ -3,6 +3,7 @@ import "server-only";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getMessaging, type Messaging } from "firebase-admin/messaging";
 
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
@@ -32,3 +33,4 @@ function getAdminApp() {
 
 export function adminAuth(): Auth { return getAuth(getAdminApp()); }
 export function adminDb(): Firestore { return getFirestore(getAdminApp()); }
+export function adminMessaging(): Messaging { return getMessaging(getAdminApp()); }
