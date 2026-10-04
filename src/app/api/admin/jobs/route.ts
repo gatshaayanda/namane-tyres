@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     batch.set(adminDb().doc(`jobs/${job.id}`), job, { merge: false });
     batch.set(adminDb().doc(`publicJobs/${job.publicShareId}`), {
       customerName: job.customerName, vehicle: job.vehicle, service: job.service, status: job.status,
-      problem: job.problem, notes: job.notes, createdAt: job.createdAt, updatedAt: job.updatedAt,
+      problem: job.problem, notes: job.notes, createdAt: job.createdAt, updatedAt: job.updatedAt, shareStats: job.shareStats ?? { views: 0, engagements: 0 },
     }, { merge: false });
     await batch.commit();
     return NextResponse.json({ job });
