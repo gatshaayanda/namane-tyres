@@ -44,28 +44,34 @@ function readImageDimensions(file:File):Promise<{width:number;height:number}|nul
 
 export async function compressJobImage(file:File){
   if(!file.type.startsWith("image/"))throw new Error("Please choose an image.");
-  if(file.size<=3.5*1024*1024)return file;
-  const dimensions=await readImageDimensions(file);
-  if(dimensions&&typeof createImageBitmap==="function"){
-    const scale=Math.min(1,MAX_IMAGE_DIMENSION/Math.max(dimensions.width,dimensions.height));
-    const width=Math.max(1,Math.round(dimensions.width*scale));
-    const height=Math.max(1,Math.round(dimensions.height*scale));
-    const bitmap=await createImageBitmap(file,{resizeWidth:width,resizeHeight:height,resizeQuality:"high",imageOrientation:"from-image"});
+  // Keep already-small JPEGs as-is. Everything else is normalized to JPEG so
+  // camera formats such as HEIF/HEIC are never uploaded with the wrong MIME type.
+  if(file.size<=3.5*1024*1024 && file.type==="image/jpeg")return file;
+  try{
+    const dimensions=await readImageDimensions(file);
+    if(dimensions&&typeof createImageBitmap==="function"){
+      const scale=Math.min(1,MAX_IMAGE_DIMENSION/Math.max(dimensions.width,dimensions.height));
+      const width=Math.max(1,Math.round(dimensions.width*scale));
+      const height=Math.max(1,Math.round(dimensions.height*scale));
+      const bitmap=await createImageBitmap(file,{resizeWidth:width,resizeHeight:height,resizeQuality:"high",imageOrientation:"from-image"});
+      const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+      const context=canvas.getContext("2d");
+      if(!context){bitmap.close();throw new Error("This phone could not prepare the picture. Please try another photo.");}
+      context.drawImage(bitmap,0,0,width,height);bitmap.close();
+      return await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Could not prepare image.")),"image/jpeg",.78));
+    }
+    const bitmap=await createImageBitmap(file);
+    const scale=Math.min(1,MAX_IMAGE_DIMENSION/Math.max(bitmap.width,bitmap.height));
+    const width=Math.max(1,Math.round(bitmap.width*scale)),height=Math.max(1,Math.round(bitmap.height*scale));
     const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
     const context=canvas.getContext("2d");
     if(!context){bitmap.close();throw new Error("This phone could not prepare the picture. Please try another photo.");}
     context.drawImage(bitmap,0,0,width,height);bitmap.close();
     return await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Could not prepare image.")),"image/jpeg",.78));
+  }catch{
+    throw new Error("This phone could not prepare that camera photo. Please retake it, or choose a JPG photo from the phone.");
   }
-  try{
-    const bitmap=await createImageBitmap(file);
-    const scale=Math.min(1,MAX_IMAGE_DIMENSION/Math.max(bitmap.width,bitmap.height));
-    const width=Math.max(1,Math.round(bitmap.width*scale)),height=Math.max(1,Math.round(bitmap.height*scale));
-    const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;canvas.getContext("2d")?.drawImage(bitmap,0,0,width,height);bitmap.close();
-    return await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Could not prepare image.")),"image/jpeg",.78));
-  }catch{throw new Error("This picture is too large for this phone to prepare. Please retake it with the camera and try again.");}
 }
-
 async function uploadPending(item:PendingPhoto):Promise<JobPhoto>{
   const user=auth.currentUser;
   if(!user) throw new Error("Your Operations session has expired. Sign in again.");
