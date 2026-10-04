@@ -44,7 +44,13 @@ async function adminToken(){const user=auth.currentUser;if(!user)throw new Error
 async function adminRequest(path:string,init:RequestInit={}){const token=await adminToken();const response=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`,...(init.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(String(body.error||`Operations request failed (${response.status}).`));return body;}
 
 export async function getJobs(){
-  if(navigator.onLine)return (await adminRequest("/api/admin/jobs")).jobs as Job[];
+  if(navigator.onLine){
+    try{
+      const jobs=(await adminRequest("/api/admin/jobs")).jobs as Job[];
+      await Promise.all(jobs.map((job)=>setDoc(doc(db,"jobs",job.id),job,{merge:true})));
+      return jobs;
+    }catch{}
+  }
   const snapshot=await getDocs(jobsCollection);
   return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<Job,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
 }
@@ -59,19 +65,33 @@ export function createJob(input:JobInput){
   const id=crypto.randomUUID();const now=new Date().toISOString();const publicShareId=crypto.randomUUID().replace(/-/g,"");
   const shareStats:JobShareStats={views:0,engagements:0};
   const job:Job={id,...input,createdAt:now,updatedAt:now,publicShareId,shareStats};
+  const writeLocally=()=>Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now,shareStats})]).then(()=>undefined);
   const writePromise=navigator.onLine
-    ? adminRequest("/api/admin/jobs",{method:"POST",body:JSON.stringify(job)}).then(()=>undefined)
-    : Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now,shareStats})]).then(()=>undefined);
+    ? adminRequest("/api/admin/jobs",{method:"POST",body:JSON.stringify(job)}).then(async()=>{await setDoc(doc(db,"jobs",id),job,{merge:true});await setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now,shareStats},{merge:true});}).catch(()=>{queueJobWrite({id,method:"POST",job});return writeLocally();})
+    : writeLocally();
   return{job,writePromise};
 }
 export async function updateJob(job:Job){
-  if(navigator.onLine)return (await adminRequest("/api/admin/jobs",{method:"PATCH",body:JSON.stringify(job)})).job as Job;
   const now=new Date().toISOString();const next={...job,updatedAt:now};
-  await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now,shareStats:next.shareStats||{views:0,engagements:0}},{merge:true})]);
-  return next;
+  const writeLocally=async()=>{await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now,shareStats:next.shareStats||{views:0,engagements:0}},{merge:true})]);return next;};
+  if(navigator.onLine){
+    try{
+      const saved=(await adminRequest("/api/admin/jobs",{method:"PATCH",body:JSON.stringify(job)})).job as Job;
+      await setDoc(doc(db,"jobs",job.id),saved,{merge:true});
+      await setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:saved.customerName,vehicle:saved.vehicle,service:saved.service,status:saved.status,problem:saved.problem,notes:saved.notes,createdAt:saved.createdAt,updatedAt:saved.updatedAt,shareStats:saved.shareStats||{views:0,engagements:0}},{merge:true});
+      return saved;
+    }catch{queueJobWrite({id:job.id,method:"PATCH",job:next});}
+  }
+  return writeLocally();
 }
 export async function getJobPhotos(jobId:string){
-  if(navigator.onLine)return (await adminRequest(`/api/admin/job-photos?jobId=${encodeURIComponent(jobId)}`)).photos as JobPhoto[];
+  if(navigator.onLine){
+    try{
+      const photos=(await adminRequest(`/api/admin/job-photos?jobId=${encodeURIComponent(jobId)}`)).photos as JobPhoto[];
+      await Promise.all(photos.map((photo)=>Promise.all([setDoc(doc(db,"jobs",photo.jobId,"photos",photo.id),photo,{merge:true}),setDoc(doc(db,"publicJobs",photo.shareId,"photos",photo.id),photo,{merge:true})])));
+      return photos;
+    }catch{}
+  }
   const snapshot=await getDocs(collection(db,"jobs",jobId,"photos"));
   return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<JobPhoto,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
 }

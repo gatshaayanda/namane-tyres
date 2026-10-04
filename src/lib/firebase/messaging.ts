@@ -12,6 +12,8 @@ async function getClientMessaging(){
  return messaging;
 }
 
+export function pushConfigured(){return Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY);}
+
 export async function enableJobNotifications(shareId:string){
  const vapidKey=process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
  if(!vapidKey)throw new Error("Push notifications need the Firebase Web Push key configured.");
@@ -21,6 +23,7 @@ export async function enableJobNotifications(shareId:string){
  const m=await getClientMessaging();
  if(!m)throw new Error("Push notifications are not supported on this device.");
  const registration=await navigator.serviceWorker.register("/firebase-messaging-sw.js",{scope:"/firebase-cloud-messaging-push-scope/"});
+ await navigator.serviceWorker.ready;
  const token=await getToken(m,{vapidKey,serviceWorkerRegistration:registration});
  if(!token)throw new Error("Could not register this device for notifications.");
  const response=await fetch(`/api/public/share/${shareId}/notifications`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})});
