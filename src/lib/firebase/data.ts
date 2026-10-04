@@ -13,9 +13,9 @@ export const JOB_STATUSES = ["New","Accepted","In Progress","Ready / Awaiting Cu
 export type JobStatus = (typeof JOB_STATUSES)[number];
 export const PAYMENT_STATUSES = ["Unpaid","Part-paid","Paid"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
-export type Job = { id:string; createdAt:string; updatedAt:string; customerName:string; phone:string; vehicle:string; service:string; problem:string; notes:string; status:JobStatus; amount:string; paymentStatus:PaymentStatus; publicShareId:string; acceptedAt?:string; startedAt?:string; completedAt?:string };
+export type JobShareStats = { views:number; engagements:number; lastViewedAt?:string; lastEngagedAt?:string };
+export type Job = { id:string; createdAt:string; updatedAt:string; customerName:string; phone:string; vehicle:string; service:string; problem:string; notes:string; status:JobStatus; amount:string; paymentStatus:PaymentStatus; publicShareId:string; shareStats?:JobShareStats; acceptedAt?:string; startedAt?:string; completedAt?:string };
 export type JobInput = Omit<Job,"id"|"createdAt"|"updatedAt"|"publicShareId">;
-export type JobPhoto = { id:string; jobId:string; shareId:string; storagePath:string; url:string; caption:string; createdAt:string };
 
 const requestsCollection=collection(db,"assistanceRequests");
 const inventoryCollection=collection(db,"tyreInventory");
@@ -44,16 +44,17 @@ export async function getJobs(){
 }
 export function createJob(input:JobInput){
   const id=crypto.randomUUID();const now=new Date().toISOString();const publicShareId=crypto.randomUUID().replace(/-/g,"");
-  const job:Job={id,...input,createdAt:now,updatedAt:now,publicShareId};
+  const shareStats:JobShareStats={views:0,engagements:0};
+  const job:Job={id,...input,createdAt:now,updatedAt:now,publicShareId,shareStats};
   const writePromise=navigator.onLine
     ? adminRequest("/api/admin/jobs",{method:"POST",body:JSON.stringify(job)}).then(()=>undefined)
-    : Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now})]).then(()=>undefined);
+    : Promise.all([setDoc(doc(db,"jobs",id),job),setDoc(doc(db,"publicJobs",publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:now,updatedAt:now,shareStats})]).then(()=>undefined);
   return{job,writePromise};
 }
 export async function updateJob(job:Job){
   if(navigator.onLine)return (await adminRequest("/api/admin/jobs",{method:"PATCH",body:JSON.stringify(job)})).job as Job;
   const now=new Date().toISOString();const next={...job,updatedAt:now};
-  await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now},{merge:true})]);
+  await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now,shareStats:next.shareStats||{views:0,engagements:0}},{merge:true})]);
   return next;
 }
 export async function getJobPhotos(jobId:string){
