@@ -55,7 +55,8 @@ export async function PATCH(request: Request) {
     const job = await request.json();
     if (!job?.id || !job?.publicShareId) return NextResponse.json({ error: "Job identifiers are required." }, { status: 422 });
     const now = new Date().toISOString();
-    const next = { ...job, updatedAt: now };
+    const existing = await adminDb().doc(`jobs/${job.id}`).get();
+    const next = { ...job, shareStats: existing.data()?.shareStats ?? job.shareStats ?? { views: 0, engagements: 0 }, updatedAt: now };
     const batch = adminDb().batch();
     batch.set(adminDb().doc(`jobs/${job.id}`), next, { merge: true });
     batch.set(adminDb().doc(`publicJobs/${job.publicShareId}`), {
