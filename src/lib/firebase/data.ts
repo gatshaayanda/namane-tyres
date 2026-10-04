@@ -22,6 +22,11 @@ const requestsCollection=collection(db,"assistanceRequests");
 const inventoryCollection=collection(db,"tyreInventory");
 const contactsCollection=collection(db,"contacts");
 const jobsCollection=collection(db,"jobs");
+const JOB_QUEUE_KEY="namane-admin-job-queue";
+type PendingJobWrite={id:string;method:"POST"|"PATCH";job:Job};
+function readJobQueue():PendingJobWrite[]{try{return JSON.parse(localStorage.getItem(JOB_QUEUE_KEY)||"[]")}catch{return[]}}
+function writeJobQueue(items:PendingJobWrite[]){localStorage.setItem(JOB_QUEUE_KEY,JSON.stringify(items))}
+function queueJobWrite(item:PendingJobWrite){const queue=readJobQueue().filter(x=>x.id!==item.id);queue.push(item);writeJobQueue(queue)}
 
 export function normalizePhone(value:string){let phone=value.trim().replace(/[^\d+]/g,"");if(phone.startsWith("267")&&!phone.startsWith("+"))phone="+"+phone;if(/^7\d{7}$/.test(phone))phone="+267"+phone;return phone;}
 export function createAssistanceRequest(data:Omit<AssistanceRequest,"id">){const reference=doc(requestsCollection);const writePromise=setDoc(reference,data);return{id:reference.id,writePromise};}
@@ -43,6 +48,13 @@ export async function getJobs(){
   const snapshot=await getDocs(jobsCollection);
   return snapshot.docs.map(item=>({id:item.id,...(item.data() as Omit<Job,"id">)})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
 }
+export async function flushQueuedJobs(){
+ if(!navigator.onLine)return{synced:0,remaining:readJobQueue().length};
+ const queue=readJobQueue();let synced=0;
+ for(const item of queue){try{await adminRequest(item.method==="POST"?"/api/admin/jobs":"/api/admin/jobs",{method:item.method,body:JSON.stringify(item.job)});const next=readJobQueue().filter(x=>x.id!==item.id);writeJobQueue(next);synced++;}catch{break}}
+ return{synced,remaining:readJobQueue().length};
+}
+export function getQueuedJobCount(){return readJobQueue().length}
 export function createJob(input:JobInput){
   const id=crypto.randomUUID();const now=new Date().toISOString();const publicShareId=crypto.randomUUID().replace(/-/g,"");
   const shareStats:JobShareStats={views:0,engagements:0};
