@@ -342,3 +342,27 @@ The product owner wants the 95 existing customer contacts introduced in one What
 - The existing Operations alert is for Thapelo's device and new assistance requests. FCM server acceptance does not prove the operating system displayed a notification.
 - Customer reply notifications must be scoped to the customer's job-share ID and registered token. Never send private job updates to a global topic or another customer's device. Request permission only after an explicit user action and explain browser/OS controls.
 - Verify real delivery on a phone in background state, correct notification click destination, stale-token handling and revocation before claiming customer push is live. Inspect actual job/message write paths before adding server triggers; avoid duplicate sends.
+
+
+## Existing-customer welcome journey and job notifications — October 2026
+
+### One-link customer introduction
+- Use **https://namane-tyres.vercel.app/welcome** as the campaign link for the existing customer list. It is a general customer welcome page, not a job link and not an app-store listing.
+- The page must explain the service first, then offer Request Help, My requests, and optional home-screen installation. Never block browsing or requesting help behind an install prompt.
+- The public PWA starts a Firebase anonymous session when supported. Treat this only as a lightweight browser-scoped identity: it is not phone-number verification, does not prove the visitor is one of the imported contacts, does not unlock an existing job, and may not be recoverable after browser data is cleared or the user changes device. Do not claim an anonymous session is a permanent, cross-device account.
+- Existing jobs remain accessible through the unguessable per-job `/job/share/{shareId}` link. Never replace those links with the general welcome URL or send one customer's job link to the whole list.
+- Use the generic welcome link in the WhatsApp broadcast introduction. Send once; reply normally to customers who engage. The welcome page offers no invented discounts, VIP entitlements, guaranteed response times, fake testimonials, or false urgency.
+- Suggested WhatsApp message: “Hi, it’s Thapelo from Namane Tyres. I’ve made it easier for you to reach Namane Tyres whenever you need tyre help. Open your customer welcome link: https://namane-tyres.vercel.app/welcome. You can see our services and request help when needed. No app-store download is needed; you can optionally save it to your phone’s home screen for next time. For an existing job, keep using the individual progress link I sent you. Reply here if you need anything. Thank you.”
+
+### Customer push notifications
+- The existing job-progress page asks the customer before registering a push token, scoped to `publicJobs/{shareId}/notificationTokens`. Keep that consent boundary.
+- When an Operations user changes a job's status, send a best-effort FCM notification only to tokens registered for that exact job share link. The notification should open the matching `/job/share/{shareId}` page.
+- A saved job status is authoritative; push delivery is a separate best-effort side effect. If FCM fails, keep the job update saved, report the failure to server logs, and do not claim the OS displayed a notification.
+- Admin request alerts and customer job-progress notifications are separate audiences. Never broadcast job details, customer names, or private progress to the whole 95-contact list.
+- Verify by registering notifications from a test job link, changing that job's status while online, checking the device notification and link target, then confirming status changes still save when push is unavailable.
+
+### Launch verification checkpoint
+- Confirm Vercel production is `READY` before the owner sends the campaign.
+- Test `/welcome` at 320, 360 and 390 CSS-pixel widths; browse, Request Help, My requests, install guidance and Refresh app must remain usable without horizontal overflow.
+- Anonymous sessions must fail gracefully if Firebase Anonymous Authentication is disabled or unavailable; public browsing and Request Help must remain accessible.
+- Customer request history is browser-scoped until a recoverable account or verified identity-linking flow is deliberately implemented. Do not merge records based only on a typed phone number.
