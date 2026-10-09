@@ -52,7 +52,7 @@ export default function SharedJobView({shareId}:{shareId:string}){
     setPhotos(ps.docs.map(d=>({id:d.id,...d.data()} as JobPhoto)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
     if(navigator.onLine){
      const mr=await fetch(`/api/public/share/${shareId}/messages`);
-     if(mr.ok){const md=await mr.json();const incoming=(md.messages||[]) as JobMessage;setMessages(incoming);cacheMessages(incoming);}
+     if(mr.ok){const md=await mr.json();const incoming=(md.messages||[]) as JobMessage[];setMessages(incoming);cacheMessages(incoming);}
      else setMessages(readCachedMessages());
     }else setMessages(readCachedMessages());
     await flushMessages();
