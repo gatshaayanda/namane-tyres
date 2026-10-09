@@ -25,6 +25,6 @@ export default function Home() {
 
     <section id="location" className="section locationSection"><div className="container locationGrid"><div><span className="kicker">Find us</span><h2>Gaborone West Phase 1.</h2><p><strong>Plot 16739, Gaborone West Phase 1, Gaborone, Botswana</strong><br />Roadside, opposite Padre Pio Medical Centre.</p><p>For directions or a job that needs help on the road, use Request Help and share your location if your phone permits it.</p></div><div className="locationCard"><span>📍</span><strong>Namane Tyres</strong><p>Plot 16739<br />Gaborone West Phase 1<br />Gaborone, Botswana</p><a className="button buttonDark" href="https://www.google.com/maps/search/?api=1&query=Plot%2016739%20Gaborone%20West%20Phase%201%20Gaborone%20Botswana">Open directions</a></div></div></section>
 
-    <footer className="footer"><div className="container footerInner"><div><strong>Namane Tyres</strong><span>Tyre fitting · Repairs · Sales · Assistance</span></div><Link href="/book" className="button buttonPrimary">Request Help</Link></div></footer>
+    <footer className="footer"><div className="container footerInner"><div><strong>Namane Tyres</strong><span>Tyre fitting · Repairs · Sales · Assistance</span></div><div className="footerActions"><Link href="/admin" className="footerUtilityLink">Business access <span aria-hidden="true">↗</span></Link><Link href="/book" className="button buttonPrimary">Request Help</Link></div></div></footer>
   </main>;
 }
