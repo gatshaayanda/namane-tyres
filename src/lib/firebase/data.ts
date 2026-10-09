@@ -5,7 +5,7 @@ import { auth, db } from "@/lib/firebase/client";
 
 export const REQUEST_STATUSES = ["New","Accepted","In Progress","Ready / Awaiting Customer","Complete","Cancelled"] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
-export type AssistanceRequest = { id:string; createdAt:string; name:string; phone:string; vehicle:string; problem:string; notes:string; locationText:string; latitude?:number; longitude?:number; locationAccuracy?:number; status:RequestStatus };
+export type AssistanceRequest = { id:string; customerUid?:string; createdAt:string; name:string; phone:string; vehicle:string; problem:string; notes:string; locationText:string; latitude?:number; longitude?:number; locationAccuracy?:number; status:RequestStatus };
 export type TyreInventoryItem = { id:string; size:string; brand:string; condition:"New"|"Used"|"Retreaded"|"Other"; quantity:number; price:string; available:boolean; notes:string };
 export type Contact = { id:string; name:string; phone:string; whatsapp:boolean; whatsappBusiness:boolean; businessName:string; businessDescription:string; notes:string; source:string; createdAt:string; updatedAt:string };
 export type ContactInput = Omit<Contact,"id"|"createdAt"|"updatedAt">;

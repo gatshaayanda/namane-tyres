@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInAnonymously, type User } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
@@ -22,6 +22,13 @@ const firebaseConfig = isBrowser ? {
 };
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+export async function ensureCustomerSession(): Promise<User | null> {
+  if (typeof window === "undefined") return null;
+  await auth.authStateReady();
+  if (auth.currentUser) return auth.currentUser;
+  return (await signInAnonymously(auth)).user;
+}
 export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 export const storage = getStorage(app);
 export { app };

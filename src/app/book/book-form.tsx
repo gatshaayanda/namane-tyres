@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { createAssistanceRequest } from "@/lib/firebase/data";
+import { ensureCustomerSession } from "@/lib/firebase/client";
 
 function errorCode(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error ? String((error as { code?: unknown }).code) : "unknown";
@@ -79,7 +80,13 @@ export default function BookForm() {
 
     try {
       const wasOffline = !navigator.onLine;
-      const { id, writePromise } = createAssistanceRequest({ ...request, ...location });
+      const customer = await ensureCustomerSession().catch(() => null);
+      const { id, writePromise } = createAssistanceRequest({ ...request, ...location, ...(customer ? { customerUid: customer.uid } : {}) });
+      if (!wasOffline) {
+        void writePromise.then(async () => {
+          await fetch("/api/public/requests/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId: id }) });
+        }).catch(() => undefined);
+      }
       setReference(id.slice(0, 8).toUpperCase());
 
       if (wasOffline) {

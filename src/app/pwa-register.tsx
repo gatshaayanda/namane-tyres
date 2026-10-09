@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { ensureCustomerSession } from "@/lib/firebase/client";
 
 export default function PwaRegister() {
+  const pathname = usePathname();
   const [offline, setOffline] = useState(false);
   const [installable, setInstallable] = useState(false);
   const [standalone, setStandalone] = useState(false);
@@ -11,6 +14,11 @@ export default function PwaRegister() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState("");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) return;
+    void ensureCustomerSession().catch((error) => console.warn("[Namane Tyres] customer session unavailable", error));
+  }, [pathname]);
 
   useEffect(() => {
     setOffline(!navigator.onLine);

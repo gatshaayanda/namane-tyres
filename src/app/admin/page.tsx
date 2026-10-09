@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AdminGate from "@/app/admin/admin-gate";
+import AdminNotificationSettings from "@/app/admin/notification-settings";
 import {
   deleteContact,
   deleteTyreInventoryItem,
@@ -155,6 +156,8 @@ function Dashboard() {
             <Link className="button buttonPrimary" href="/admin/jobs">+ Add work / Job</Link>
           </div>
         </header>
+
+        <AdminNotificationSettings />
 
         <div className="adminStats">
           <article><span>Requests</span><strong>{loading ? "—" : requests.length}</strong></article>
