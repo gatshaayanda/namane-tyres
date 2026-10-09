@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const SHELL_CACHE = `namane-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `namane-static-${CACHE_VERSION}`;
 const PUBLIC_CACHE = `namane-public-${CACHE_VERSION}`;
@@ -55,6 +55,12 @@ self.addEventListener("fetch", (event) => {
   // APIs and Firebase responses are network-only. Private operational data is
   // persisted by Firestore's own offline cache, never by Cache Storage.
   if (url.pathname.startsWith("/api/")) return;
+
+  // Preserve native HTTP Range requests for video/audio. Returning a cached
+  // full media response can break seeking and playback on mobile browsers.
+  // The poster image is cached like any other public image; media streams are
+  // network-only and intentionally not downloaded into the PWA cache.
+  if (/\.(?:mp4|webm|mov|m4v|mp3|m4a|ogg|wav)$/i.test(url.pathname)) return;
 
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/namane-assets/") ||
       url.pathname.startsWith("/images/") || url.pathname.startsWith("/fonts/") ||
