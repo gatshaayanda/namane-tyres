@@ -256,3 +256,29 @@ The contact directory is an outreach list, not a permission to expose individual
 6. Test location permission granted, denied and unavailable; manual landmark entry and request submission must continue to work.
 7. Send the campaign only with the general homepage link. Test a customer-specific job link only with the matching customer.
 8. Record real outcomes (replies, requests, install feedback and job-link usage); do not report 95 users simply because 95 messages were sent. Count actual installs/active users only when measurable and consented.
+
+## WhatsApp launch procedure for the existing 95-customer list — October 2026
+
+The owner uses an ordinary WhatsApp account, not the WhatsApp Business Platform/API. Prefer native WhatsApp tools over browser extensions, unofficial bulk-senders, contact scraping, or a customer group that exposes all recipients to one another.
+
+### First choice: one WhatsApp broadcast
+- On Android, open WhatsApp on the owner's phone → Chats → three-dot menu → Broadcast lists → New broadcast (or New list, depending on app version) → select the relevant customer contacts → tap the checkmark → paste/send the introduction once.
+- In WhatsApp Business, look under Tools → Business broadcasts, or Chats → Business Broadcast; the available menus and features vary by version/account.
+- A standard broadcast list supports up to 256 contacts, so 95 is within the list-size limit. This does **not** guarantee 95 deliveries: WhatsApp says broadcast recipients must have saved the owner's number in their address book. Some accounts/regions may also show additional broadcast limits or paid business-broadcast options; follow the limits displayed in the owner's own app.
+- A broadcast is preferable to a group: each recipient receives a private individual message, recipients cannot see the other customers, and replies return privately to the owner.
+- Send from the phone app. Standard broadcast lists are not supported in WhatsApp Web/Desktop.
+- Before sending, check that the list contains the intended existing customers and that the text contains only the general public homepage link: https://namane-tyres.vercel.app/ . Never include a /job/share/{shareId} link in a general campaign.
+
+### Fallback for customers not reached by broadcast
+- If some customers have not saved the owner's number, the broadcast may not reach them. Where a customer relationship and messaging expectations make it appropriate, send the same prepared text in an individual chat; this is the reliable fallback but requires one send per chat.
+- The homepage's WhatsApp share link can prefill the introduction and let the owner choose a recipient in WhatsApp. Do not assume it can multi-select and send to all 95 in one action; verify the actual chooser on the owner's phone. Do not automate 95 separate sends through unofficial tools.
+- Do not create a group merely to avoid the broadcast limitation; group members can see one another and replies. Use an existing group only when customers already expect group communication and have agreed to it.
+- If the app shows a broadcast quota, payment prompt, warning, or restriction, stop and follow the in-app options rather than attempting to evade it.
+
+### Recommended message and install expectation
+“Hi, it’s Thapelo from Namane Tyres. I’ve made it easier to reach me for tyre help in Gaborone West. Open this link to see the services or request help: https://namane-tyres.vercel.app/ . If you use it often, you can save it to your phone’s home screen for quicker access. You can still use it in your browser without installing. If anything is confusing, just reply and let me know. Thanks.”
+
+- This is a website/PWA link, not a Play Store/App Store download. Installation is optional and browser/device dependent; the page must explain how to save it to the home screen after it opens.
+- Do not promise every recipient will install, respond, receive push notifications, or become an active app user. Sending 95 messages means 95 attempted introductions, not 95 installs or active users.
+- Suggested launch tracking: sent by broadcast, known replies, actual assistance requests, customer feedback, and installation feedback. Do not infer delivery or installation from the send action alone.
+- Public guidance checked against WhatsApp Help Center articles “How to use broadcast lists” (https://faq.whatsapp.com/861663048350950/) and “How to use broadcast lists on the WhatsApp Business app” (https://faq.whatsapp.com/653415899610349/), plus WhatsApp’s click-to-chat instructions (https://faq.whatsapp.com/5913398998672934/). Re-check these official instructions if WhatsApp's menus or limits change.
