@@ -230,3 +230,29 @@ The contact directory is an outreach list, not a permission to expose individual
 - Test the public homepage and job-share page at narrow mobile widths (320, 360, 390 CSS px), in a normal browser and installed PWA, online and offline. Verify there is no horizontal page overflow, text is readable, controls are thumb-sized, and the correct page is loaded.
 - Verify the video over a real network with play, pause, seek and reconnect; then confirm offline behavior is graceful. Source code and a successful GitHub push alone do not verify production behavior.
 - Location capture is optional. Try a quick network-assisted fix before high-accuracy GPS, give the browser time to prompt, explain permission/Location Services failures plainly, and always allow a text landmark fallback. Never block request submission because GPS failed.
+
+
+## Customer launch: one-link introduction and install/update flow — October 2026
+
+### Recommended launch method
+- The public homepage is the single general-purpose link: https://namane-tyres.vercel.app/ . Do not distribute any /job/share/{shareId} link as a general introduction; each such link belongs only to the customer/job it identifies.
+- The homepage's “Share with a driver” / “Share Namane Tyres” action opens WhatsApp's share-to-contact flow with a prefilled message. The owner chooses recipients and presses Send; the site must not silently send messages or read/automate the phone's contacts.
+- For introducing the same link to the existing customer list, the owner may use a WhatsApp Business broadcast list if appropriate. Broadcast delivery depends on WhatsApp's rules and recipient settings (including whether recipients have saved the sender's number); do not promise delivery to all 95. Otherwise, use one-to-one messages or an existing customer group where messages are appropriate and expected. Respect requests not to receive further messages.
+- Send one short service-led introduction. Do not invent testimonials, imply an app-store download, require installation before viewing the site, or claim push notifications are guaranteed. Explain that the link opens the website/PWA; users can save it to the home screen if their browser supports it. The service remains usable without installation.
+- Suggested copy: “Hi, it’s Thapelo from Namane Tyres. I’ve made it easier to reach me for tyre help in Gaborone West. Open this link to see services or request help: https://namane-tyres.vercel.app/ . You can save it to your phone’s home screen so it’s easy to find next time. If anything is confusing, reply and tell me. Thanks.”
+
+### Install, refresh and update UX
+- Provide a persistent, accessible “Save Namane Tyres to phone” action for browser users. Use the native install prompt when the browser provides it; otherwise explain Android browser-menu installation and iPhone Safari → Share → Add to Home Screen. Never imply installation is required to use the service.
+- Provide a visible “Refresh app” action that checks the service-worker registration for updates, applies a waiting update through the existing explicit message, and reloads the current page so the newest deployed screen can load. Do not disable pinch-to-zoom.
+- When changing the service worker's caching strategy or app-shell assets, bump CACHE_VERSION so obsolete shell/static/public caches are deleted on activation. Keep video/audio network-only and preserve native Range requests.
+- Do not announce an update is available until the service worker has installed it; do not claim the refresh worked unless the page actually reloads and the deployed version is verified.
+
+### Launch acceptance checklist
+1. Confirm the latest production deployment is READY before asking the owner to distribute the link.
+2. Open the generic homepage in Android Chrome, iPhone Safari if available, and the installed PWA; confirm the page fits a 320–390 CSS-pixel viewport with no horizontal overflow and readable service cards, nav and controls.
+3. Confirm the install action either opens the browser's native prompt or shows accurate manual instructions; verify the installed app can be opened from the home screen.
+4. Tap “Refresh app”; verify it reloads and can activate a waiting service-worker update without deleting unsynced customer work.
+5. Test video playback and seeking online, then verify the cached poster/fallback works offline without blocking the request form.
+6. Test location permission granted, denied and unavailable; manual landmark entry and request submission must continue to work.
+7. Send the campaign only with the general homepage link. Test a customer-specific job link only with the matching customer.
+8. Record real outcomes (replies, requests, install feedback and job-link usage); do not report 95 users simply because 95 messages were sent. Count actual installs/active users only when measurable and consented.

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const SHELL_CACHE = `namane-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `namane-static-${CACHE_VERSION}`;
 const PUBLIC_CACHE = `namane-public-${CACHE_VERSION}`;
