@@ -41,7 +41,7 @@ First useful workflow:
 ## Public customer experience
 The public site must identify Namane Tyres and its Gaborone location, make Request Help prominent, explain real services without inventing prices or guarantees, provide direct phone/WhatsApp fallbacks when configured, work on a phone first, and remain useful when connectivity is poor.
 
-The customer should not have to complete a long manual registration just to start. The planned customer account journey must be low-friction and securely tied to a verified customer identity; do not silently create anonymous accounts or treat a shared invitation URL as identity proof. Until that account flow is implemented and verified, preserve the existing safe request-help fallback.
+The customer should not have to complete a long manual registration just to start. A Firebase anonymous session may be created automatically for low-friction customer features. An anonymous UID is temporary browser/account identity, not proof of phone ownership or contact membership. Never silently attach an anonymous session to a contact or job by guessing a phone number. Preserve a no-login Request Help fallback if anonymous auth is unavailable.
 
 Do not invent opening hours, prices, tyre brands, stock, testimonials, promotions, response times, emergency guarantees, or contact numbers.
 
@@ -140,7 +140,7 @@ The goal is a useful digital front door and lightweight operating surface for a 
 Contacts are an owner-managed business directory, not app users:
 - Existing WhatsApp/business contacts may be imported by an authorized admin.
 - A contact becomes operationally relevant when a request/job is associated with the same phone number.
-- Do not automatically create Firebase Auth users from contact imports.
+- Do not automatically create Firebase Auth users from contact imports. Opening the public app may create a temporary anonymous Firebase session, but importing contacts does not pre-create accounts or authenticate those people.
 - Owner/staff can add, edit, search and delete contacts from /admin.
 - Contact history is derived from assistance requests matching the normalized phone number.
 - WhatsApp VCF imports are parsed locally in the authenticated browser.
@@ -320,3 +320,25 @@ The product owner wants the 95 existing customer contacts introduced in one What
 - A server response indicating FCM accepted a message is not proof the OS displayed it. Test with the app in the background and verify on the actual device. If the VAPID key, Firebase Admin credentials, FCM API or notification permission is missing, say which prerequisite is missing rather than reporting success.
 - The PWA refresh control must check for a waiting service worker and safely reload the current route without clearing queued requests or photos. Existing responsive CSS is not proof of responsive behavior: test 320, 360, 390 and 430 CSS-pixel widths, landscape, browser mode and installed PWA; never disable pinch-to-zoom.
 - Firebase Auth provider settings and Firestore rules are Firebase project configuration, not Vercel build artifacts. Deploy/test the updated rules separately before claiming customer request history works in production.
+
+
+## Customer onboarding and launch campaign — October 2026
+- Use Firebase Anonymous Authentication for frictionless customer access where needed. Anonymous users are not verified identities and may lose continuity if browser data is cleared or they change devices. Offer a deliberate account-linking/recovery path before promising durable accounts.
+- Never grant customers access to /admin, /admin/jobs, contacts, inventory, private jobs, admin notification tokens, or owner/staff APIs. Operations requires a verified Firebase ID token and an admins/{uid} role of owner/staff, enforced server-side and by Firestore rules.
+- Job-share URLs are unguessable, job-specific links. Never use them as the general campaign URL. The public introduction link is https://namane-tyres.vercel.app/.
+- For the 95 unique customer numbers, the owner can create a WhatsApp Broadcast List and select the contacts. Broadcast delivery generally depends on recipients having saved the sender's number. Test with a few customers first, then send to the intended list; use WhatsApp's normal individual follow-up for anyone not reached. Do not automate unsolicited messages or claim every recipient received it.
+- Campaign message: "Hi, it's Thapelo from Namane Tyres. I've made it easier to reach me for tyre fitting, puncture repairs and tyre help in Gaborone. Open this link to view services or request help whenever you need it: https://namane-tyres.vercel.app/. You can optionally save Namane Tyres to your phone's home screen for next time. If anything is unclear, reply here and let me know. Thank you."
+- The link opens a website/PWA, not an app-store listing. Customers can browse and request help immediately; installation is optional and should be offered after the service value is clear. Do not invent testimonials, prices, promotions or guarantees.
+
+## PWA refresh and responsive verification
+- Keep an accessible Refresh app/version-check control and an explicit Update app action when a service worker is waiting. Check mobile layouts for overlap with offline banners, install controls, message composers and primary actions.
+- Refresh checks the service-worker registration and reloads the page; it cannot guarantee that the current deployment is healthy or live. Do not treat a cached page as proof of deployment.
+- Test the homepage at 320, 360, 390 and 430 CSS-pixel widths plus desktop: navigation, cards, media, forms, tap targets, overflow, keyboard focus and zoom. Never disable pinch-to-zoom.
+- Keep audio/video network-only and preserve native HTTP Range requests. Do not cache large media or partial responses in the PWA shell.
+- Before campaign launch, identify the exact GitHub commit and matching Vercel production deployment. Do not recommend distribution until production is READY and a real-phone smoke check confirms the main flow.
+
+## Namane push notifications
+- Use BOEMO only as a UX/architecture reference. Use Namane's own Firebase project, VAPID key, service worker, server credentials and scoped token records.
+- The existing Operations alert is for Thapelo's device and new assistance requests. FCM server acceptance does not prove the operating system displayed a notification.
+- Customer reply notifications must be scoped to the customer's job-share ID and registered token. Never send private job updates to a global topic or another customer's device. Request permission only after an explicit user action and explain browser/OS controls.
+- Verify real delivery on a phone in background state, correct notification click destination, stale-token handling and revocation before claiming customer push is live. Inspect actual job/message write paths before adding server triggers; avoid duplicate sends.
