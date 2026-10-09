@@ -208,3 +208,25 @@ The app is the record of work, not a replacement for human communication. WhatsA
 - Job progress photos are compressed before storage, kept out of Cache Storage, and queued in IndexedDB when offline. The photo outbox is bounded to 40 items and reports when full rather than silently consuming unbounded device storage.
 - Offline wording must distinguish: saved on this phone, waiting to sync, synced/uploaded, and received by Namane Tyres. A customer share link is not considered server-visible until the job has synchronized.
 - Do not add Background Sync as a dependency unless a concrete requirement appears; the current reconnect/online flush path is deliberately simple and explicit.
+
+## Customer introduction and referral launch — October 2026
+
+The contact directory is an outreach list, not a permission to expose individual customer jobs or to send unsolicited repeated messages. Treat the launch as a useful service introduction, not a pressure campaign.
+
+### Safe sharing rules
+- The public URL `/job/share/{shareId}` is specific to one job. It may expose that customer's progress, photos and messages to anyone who receives the link. **Never send a job-specific share link to the full contacts list.** Send it only to the customer associated with that job.
+- For a general introduction, share the public homepage `https://namane-tyres.vercel.app/` or a dedicated general introduction page. Do not use a live customer's job as a demo or testimonial without their explicit permission.
+- Do not claim that customers have praised/recommended the app unless the business has verified, permissioned testimonials. Prefer a concrete explanation of what the service lets customers do.
+- Send a single concise introduction first. Use WhatsApp one-to-one or an appropriate opt-in broadcast/list; respect replies, opt-outs and platform rules. Do not scrape/import extra contacts or repeatedly message people who do not engage.
+- Make the value clear: customers can request tyre help, share their location when available, and follow progress on a job through a private link supplied by Namane Tyres. The app does not guarantee emergency response, immediate acceptance, live tracking or push delivery.
+- CTA hierarchy: view Namane Tyres → request assistance when needed → save the contact/link. Avoid asking customers to install an app before they can understand or use the service.
+- Measure launch quality through actual signals: link clicks where privacy-respecting analytics are available, assistance requests, requests that reach the owner, job-share page visits and customer replies. Do not invent engagement counts or testimonials.
+
+### Media reliability and PWA verification
+- Keep the app shell, CSS, JavaScript, icons, manifest and lightweight public poster images cacheable for offline use.
+- Do not route video/audio through cache-first handling. Preserve browser-native HTTP Range requests for media; a full cached response can interfere with seeking and playback. Do not precache the large tyre-work video or claim it is available offline unless an explicitly tested, size-bounded offline media strategy is implemented.
+- For media offline, show a useful cached poster and a clear message that playback needs a connection. The public page, request form and queued-request workflow must remain usable without the video.
+- When media/cache routing or customer-facing shell assets change, bump the service-worker cache version so stale installed-PWA assets are removed on activation. Avoid automatically replacing an active session without the existing update flow.
+- Test the public homepage and job-share page at narrow mobile widths (320, 360, 390 CSS px), in a normal browser and installed PWA, online and offline. Verify there is no horizontal page overflow, text is readable, controls are thumb-sized, and the correct page is loaded.
+- Verify the video over a real network with play, pause, seek and reconnect; then confirm offline behavior is graceful. Source code and a successful GitHub push alone do not verify production behavior.
+- Location capture is optional. Try a quick network-assisted fix before high-accuracy GPS, give the browser time to prompt, explain permission/Location Services failures plainly, and always allow a text landmark fallback. Never block request submission because GPS failed.
