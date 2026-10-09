@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
         const tokenDocs = tokenSnapshot.docs.filter(item => typeof item.data().token === "string" && item.data().token);
         if (tokenDocs.length) {
           const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://namane-tyres.vercel.app";
-          const link = baseUrl.replace(/\\/$/, "") + "/job/share/" + encodeURIComponent(String(job.publicShareId));
+          const link = baseUrl.replace(/\/$/, "") + "/job/share/" + encodeURIComponent(String(job.publicShareId));
           const result = await adminMessaging().sendEachForMulticast({
             tokens: tokenDocs.map(item => String(item.data().token)),
             notification: {
