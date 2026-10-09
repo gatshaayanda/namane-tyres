@@ -41,7 +41,7 @@ First useful workflow:
 ## Public customer experience
 The public site must identify Namane Tyres and its Gaborone location, make Request Help prominent, explain real services without inventing prices or guarantees, provide direct phone/WhatsApp fallbacks when configured, work on a phone first, and remain useful when connectivity is poor.
 
-Do not require a customer account just to request help.
+The customer should not have to complete a long manual registration just to start. The planned customer account journey must be low-friction and securely tied to a verified customer identity; do not silently create anonymous accounts or treat a shared invitation URL as identity proof. Until that account flow is implemented and verified, preserve the existing safe request-help fallback.
 
 Do not invent opening hours, prices, tyre brands, stock, testimonials, promotions, response times, emergency guarantees, or contact numbers.
 
@@ -282,3 +282,30 @@ The owner uses an ordinary WhatsApp account, not the WhatsApp Business Platform/
 - Do not promise every recipient will install, respond, receive push notifications, or become an active app user. Sending 95 messages means 95 attempted introductions, not 95 installs or active users.
 - Suggested launch tracking: sent by broadcast, known replies, actual assistance requests, customer feedback, and installation feedback. Do not infer delivery or installation from the send action alone.
 - Public guidance checked against WhatsApp Help Center articles “How to use broadcast lists” (https://faq.whatsapp.com/861663048350950/) and “How to use broadcast lists on the WhatsApp Business app” (https://faq.whatsapp.com/653415899610349/), plus WhatsApp’s click-to-chat instructions (https://faq.whatsapp.com/5913398998672934/). Re-check these official instructions if WhatsApp's menus or limits change.
+
+
+## Customer invitation onboarding — October 2026 (supersedes guest-first campaign assumptions)
+
+The product owner wants the 95 existing customer contacts introduced in one WhatsApp broadcast, and wants recipients to enter the actual Namane Tyres web app/onboarding—not a generic brochure or an app-store listing. Follow The Plug's principles for a branded, low-friction mobile journey, but adapt the content and account model to Namane Tyres.
+
+### Required customer journey
+1. Thapelo sends one WhatsApp broadcast containing the single general onboarding URL: https://namane-tyres.vercel.app/ . A broadcast sends the same link to all selected recipients; it cannot give each recipient a different private account token.
+2. The link opens a responsive, Namane-branded welcome/onboarding experience. It quickly explains tyre services, Request Help, job progress when applicable, and why keeping Namane Tyres on the home screen is useful.
+3. Customers can enter and use the web app before deciding whether to install. Do not show a blocking install prompt on ordinary first visit. Explain the benefit, then offer a clear optional install action; use the browser's install prompt where supported and correct platform-specific steps elsewhere.
+4. Account onboarding must be short and securely tied to a verified identity. Preferred shared-broadcast path: let the customer verify their own phone number (for example, a supported OTP flow), match it to an existing contact by normalized Botswana phone number, then create/connect the customer account and only expose data belonging to that account. Verify Firebase provider availability, abuse controls, and any SMS/billing requirements before implementing OTP.
+5. A WhatsApp broadcast recipient having Thapelo's number saved helps WhatsApp deliver the broadcast; it does not tell the website which contact opened the link and does not authenticate that contact.
+6. Never let one generic URL silently sign in as a named contact or expose contact/job data. Do not put phone numbers, contact IDs, job IDs, or private data in a reusable public query string. A forwarded link must not let another person impersonate the intended customer.
+7. If true zero-step, contact-specific account creation is required instead of phone verification, the system needs 95 distinct, unguessable, expiring, single-use invitation tokens delivered privately to their intended recipients. That is a separate delivery method and cannot be achieved by sending one identical broadcast URL. Do not build it without explicit approval of the delivery/security design.
+8. Until customer authentication is implemented and tested, do not pretend the account feature exists; preserve the current request-help flow and customer-specific /job/share/{shareId} links. Job links remain private to the customer associated with that job.
+
+### Campaign success and truthful measurement
+- Sending a broadcast is an attempted introduction, not proof of delivery, account creation, app installation, notification permission, or active use.
+- Track actual outcomes only from reliable events: verified account created/connected, request submitted and confirmed, real install outcome where supported, and voluntary feedback.
+- Do not use fabricated reviews or imply that all 95 customers are already users. Invite customers to open the app, see what it does, and optionally install it for one-tap return access.
+- Keep the campaign message short, human and useful. The link should open the real customer journey, not the single-job progress link.
+
+### PWA refresh and responsive acceptance
+- The current PWA registration component includes a visible “Refresh app” action and a waiting-update action. Preserve these; do not add a duplicate refresh control. Verify the control's actual behaviour after a READY deployment.
+- A refresh must check the service-worker registration, safely activate a waiting worker where appropriate, and reload the current route. It must not erase queued requests, queued photos, or other unsynced work.
+- Verify responsive layout separately from PWA refresh: test at 320, 360, 390 and 430 CSS-pixel widths, portrait and landscape, normal zoom, browser and installed-PWA display modes. Confirm no horizontal overflow, readable text, usable navigation/buttons, and correctly scaled images/video. Never disable pinch-to-zoom.
+- Do not claim these customer onboarding, refresh, or responsive checks passed solely because source code exists. Require successful build/deployment and record actual verification evidence.
