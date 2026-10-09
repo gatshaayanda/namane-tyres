@@ -7,6 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Tyre fitting, repairs, sales and roadside assistance in Gaborone.",
     start_url: "/",
     display: "standalone",
+    shortcuts: [{ name: "Operations", short_name: "Operations", description: "Open protected Namane Tyres operations", url: "/admin", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }] }],
     background_color: "#111827",
     theme_color: "#111827",
     orientation: "portrait-primary",
