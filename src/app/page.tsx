@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import WorkVideo from "@/app/work-video";
 
 const services = [
   ["🔧", "Tyre fitting", "Get tyres fitted and get back on the road."],
@@ -19,7 +20,7 @@ export default function Home() {
 
     <section id="services" className="section"><div className="container"><div className="sectionHead"><span className="kicker">What we do</span><h2>Simple tyre help.</h2><p>Choose the service you need, or tell us what is wrong and let the team take it from there.</p></div><div className="cards">{services.map(([icon,title,detail]) => <article className="card" key={title}><div className="cardIcon">{icon}</div><h3>{title}</h3><p>{detail}</p></article>)}</div></div></section>
 
-    <section id="work" className="section workSection"><div className="container"><div className="sectionHead"><span className="kicker">The work</span><h2>Real work, real place.</h2><p>Namane Tyres is a roadside tyre business in Gaborone West Phase 1. These are the people, road and working environment behind the service.</p></div><div className="mediaGrid"><figure className="mediaCard"><Image src="/namane-assets/passing-car.jpg" alt="Roadside view near Namane Tyres" width={1600} height={1000} sizes="(max-width: 800px) 100vw, 50vw" /><figcaption>Roadside location in the neighbourhood.</figcaption></figure><figure className="mediaCard"><video controls preload="metadata" playsInline width={1600} height={900} poster="/namane-assets/work-location.jpg" aria-label="Tyre work at the Namane Tyres business"><source src="/namane-assets/zoom-in-work-on-tyres.mp4" type="video/mp4" />Your browser does not support this video.</video><figcaption>Tyre work at the business.</figcaption></figure></div></div></section>
+    <section id="work" className="section workSection"><div className="container"><div className="sectionHead"><span className="kicker">The work</span><h2>Real work, real place.</h2><p>Namane Tyres is a roadside tyre business in Gaborone West Phase 1. These are the people, road and working environment behind the service.</p></div><div className="mediaGrid"><figure className="mediaCard"><Image src="/namane-assets/passing-car.jpg" alt="Roadside view near Namane Tyres" width={1600} height={1000} sizes="(max-width: 800px) 100vw, 50vw" /><figcaption>Roadside location in the neighbourhood.</figcaption></figure><figure className="mediaCard"><WorkVideo /><figcaption>Tyre work at the business.</figcaption></figure></div></div></section>
 
     <section className="requestBand"><div className="container requestBandInner"><div><span className="kicker">Need a hand?</span><h2>Tell Namane Tyres what&apos;s happening.</h2><p>Give us your name, phone, vehicle and problem. Add your location when useful.</p></div><Link href="/book" className="button buttonPrimary">Request Assistance</Link></div></section>
 
