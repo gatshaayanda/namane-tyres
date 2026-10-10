@@ -10,10 +10,14 @@
 .accountStatusPill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.8rem;font-weight:800}
 @media(max-width:560px){.accountStatusPill{white-space:normal}}
 
-.servicePriceCards{grid-template-columns:repeat(3,minmax(0,1fr))}
-.servicePriceCard{min-height:170px}
+.serviceCombinedCards{grid-template-columns:repeat(3,minmax(0,1fr))}
+.serviceCombinedCard{min-height:200px;display:flex;flex-direction:column;align-items:flex-start}
+.servicePriceInline{width:100%;margin-top:auto;padding-top:18px}
+.servicePriceLine{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:.92rem}
+.servicePriceLine strong{white-space:nowrap;font-size:1.1rem;color:var(--teal)}
 .servicePriceAmount{display:block;font-size:2rem;letter-spacing:-.04em;margin-top:18px;color:var(--teal)}
-.priceEditorRow{grid-column:1/-1;display:grid;grid-template-columns:1fr 180px;gap:18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.priceEditorRow{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) 150px auto;align-items:end;gap:18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
 .priceEditorRow label{display:grid;gap:7px;font-weight:900;font-size:.9rem}
 .priceEditorRow input{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:#fbfcfd}
-@media(max-width:700px){.servicePriceCards{grid-template-columns:1fr}.priceEditorRow{grid-template-columns:1fr}.topbarInner{flex-wrap:wrap;gap:6px 12px}.navLinks{gap:12px;font-size:.8rem}}
+.priceRemoveButton{white-space:nowrap}
+@media(max-width:700px){.serviceCombinedCards{grid-template-columns:1fr}.priceEditorRow{grid-template-columns:1fr}.topbarInner{flex-wrap:wrap;gap:6px 12px}.navLinks{gap:12px;font-size:.8rem}}

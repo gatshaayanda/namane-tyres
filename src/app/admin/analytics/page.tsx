@@ -138,9 +138,9 @@ function AnalyticsDashboard() {
         {data && (
           <>
             <div className="adminStats">
-              <Metric label="Website visitors" value={data.web.visitors} note="Unique browsers seen in this period" />
-              <Metric label="Page views" value={data.web.pageViews} note="Public pages opened" />
-              <Metric label="Booking page views" value={data.web.bookingPageViews} note="People reached the booking form" />
+              <Metric label="Tracked visitors" value={data.web.visitors} note="Unique browsers seen by Namane's tracker" />
+              <Metric label="Tracked page views" value={data.web.pageViews} note="Page views recorded by Namane's tracker" />
+              <Metric label="Booking page views" value={data.web.bookingPageViews} note="Recorded views of the booking form" />
               <Metric label="Customer requests" value={data.business.requestsReceived} note={`Requests received in ${range} days`} />
               <Metric label="WhatsApp taps" value={data.web.whatsappTaps} note="Recorded taps to contact you" />
               <Metric label="Call taps" value={data.web.callTaps} note="Recorded taps to call" />
@@ -170,6 +170,11 @@ function AnalyticsDashboard() {
                 </div>
               </section>
             </div>
+
+            <section className="adminPanel">
+              <div className="panelHeading"><div><span className="kicker">Traffic source</span><h2>This is not the Vercel Analytics total.</h2></div></div>
+              <p>This page counts only events recorded by Namane Tyres' own first-party tracker. It does not currently import Vercel Analytics. Vercel can therefore show higher visitor and page-view totals for the same dates. Use Vercel Analytics for overall website traffic; use this report for Namane-tracked actions and the operational requests/jobs below. Do not treat these traffic counts as a complete total or add them to Vercel's counts.</p>
+            </section>
 
             <section className="adminPanel">
               <div className="panelHeading"><div><span className="kicker">How to read this report</span><h2>A few important notes</h2></div></div>

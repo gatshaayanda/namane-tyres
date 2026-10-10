@@ -99,8 +99,22 @@ function Dashboard() {
     }
   }
 
+  function addServicePrice() {
+    setServicePrices((items) => [...items, { id: "service-" + Date.now().toString(36), name: "", price: 0 }]);
+    setNotice("New service added. Enter its name and price, then save & publish.");
+  }
+
+  function removeServicePrice(id: string) {
+    setServicePrices((items) => items.filter((item) => item.id !== id));
+    setNotice("Service removed from the draft. Save & publish to remove it from the public site.");
+  }
+
   async function savePrices() {
     const cleaned = servicePrices.map((item) => ({ ...item, name: item.name.trim(), price: Number(item.price) }));
+    if (cleaned.length < 1) {
+      setNotice("Keep at least one published service price. Add a service before saving.");
+      return;
+    }
     if (cleaned.some((item) => !item.name || !Number.isFinite(item.price) || item.price < 0)) {
       setNotice("Enter a service name and a valid non-negative price for every service.");
       return;
@@ -309,11 +323,12 @@ function Dashboard() {
                   <div className="priceEditorRow" key={item.id}>
                     <label>Service name<input value={item.name} onChange={(e) => setServicePrices((current) => current.map((price, i) => i === index ? { ...price, name: e.target.value } : price))} /></label>
                     <label>Price (P)<input type="number" min="0" step="0.01" value={item.price} onChange={(e) => setServicePrices((current) => current.map((price, i) => i === index ? { ...price, price: e.target.value === "" ? 0 : Number(e.target.value) } : price))} /></label>
+                    <button className="button buttonLight priceRemoveButton" type="button" onClick={() => removeServicePrice(item.id)} disabled={servicePrices.length <= 1} aria-label={"Remove " + (item.name || "service")}>Remove service</button>
                   </div>
                 ))}
               </div>
-              <div className="actions"><button className="button buttonPrimary" type="button" onClick={() => void savePrices()}>Save & publish prices</button></div>
-              <p className="formTruth">Starting prices supplied by Namane Tyres: P40.00 each. The public site shows the saved amounts.</p>
+              <div className="actions"><button className="button buttonLight" type="button" onClick={addServicePrice} disabled={servicePrices.length >= 12}>+ Add service</button><button className="button buttonPrimary" type="button" onClick={() => void savePrices()}>Save & publish prices</button></div>
+              <p className="formTruth">The three seeded starting prices are P40.00 each. Edit, add or remove services here, then save & publish to update the public site. Keep at least one service.</p>
             </div>
           </section>
         )}
