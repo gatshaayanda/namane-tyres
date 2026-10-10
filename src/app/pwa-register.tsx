@@ -195,7 +195,7 @@ export default function PwaRegister() {
       {showInstallHelp && <div className="pwaInstallHelp" role="dialog" aria-label="How to save Namane Tyres">
         <button className="pwaHelpClose" type="button" aria-label="Close install instructions" onClick={() => setShowInstallHelp(false)}>×</button>
         <strong>Keep Namane Tyres one tap away</strong>
-        <p><b>Android:</b> open Chrome's menu (⋮), then choose <b>Install app</b> or <b>Add to Home screen</b>. If the Install button appeared above, use it.</p>
+        <p><b>Android:</b> open Chrome&apos;s menu (⋮), then choose <b>Install app</b> or <b>Add to Home screen</b>. If the Install button appeared above, use it.</p>
         <p><b>iPhone:</b> open this page in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>
         <p>You can still use the website without installing it.</p>
       </div>}
