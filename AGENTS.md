@@ -4,8 +4,9 @@
 Namane Tyres is the real customer-facing digital front door and lightweight operating surface for Thapelo Namane Tyre Fitting Business in Gaborone, Botswana.
 
 Business location:
-- Plot 16739, Gaborone West Phase 1, Gaborone, Botswana
-- Roadside, opposite Padre Pio Medical Centre
+- Near KFC, beside the roadside car washes, Gaborone, Botswana
+- Business phone numbers: 72736456 and 75410091
+- Do not restore the older Plot 16739 / opposite Padre Pio description unless the owner confirms it again
 
 Core services: tyre fitting, puncture repair, pressure checks, tyre sales, light wash services and roadside assistance.
 
@@ -39,7 +40,7 @@ First useful workflow:
 7. Job is completed.
 
 ## Public customer experience
-The public site must identify Namane Tyres and its Gaborone location, make Request Help prominent, explain real services without inventing prices or guarantees, provide direct phone/WhatsApp fallbacks when configured, work on a phone first, and remain useful when connectivity is poor.
+The public site must identify Namane Tyres and its Gaborone location, make Request Help prominent, show owner-managed service prices, provide direct phone/WhatsApp fallbacks, work on a phone first, and remain useful when connectivity is poor. Current published service prices start at P40.00 for tyre fitting, tubeless patch and inside patch; the owner can change these in Operations → Services & prices. Do not invent additional prices or guarantees.
 
 The customer should not have to complete a long manual registration just to start. A Firebase anonymous session may be created automatically for low-friction customer features. An anonymous UID is temporary browser/account identity, not proof of phone ownership or contact membership. Never silently attach an anonymous session to a contact or job by guessing a phone number. Preserve a no-login Request Help fallback if anonymous auth is unavailable.
 
@@ -109,7 +110,7 @@ Use server-authoritative timestamps where practical, but do not make the offline
 Business media may live under public/namane-assets/ for stable static content or UploadThing when owner-managed job media is needed. Do not put large media blobs in Firestore. Do not make a child/family image the public identity of the business or expose unnecessary personal information.
 
 ## Admin / Operations
-/admin is the real owner/staff operations surface. Keep it small and practical: incoming assistance requests, request details and contact actions, status changes, tyre inventory and useful operational notes.
+/admin is the real owner/staff operations surface. Keep it small and practical: incoming assistance requests, request details and contact actions, status changes, tyre inventory, owner-editable customer-facing service prices, business-link sharing and useful operational notes. The Operations header links to the owner-only Analytics report at /admin/analytics. Analytics should explain website visitors/page views, booking-page views, recorded call/WhatsApp taps, customer requests, jobs and job-share activity in plain business language. Treat traffic as activity, not proof of sales; disclose tracking coverage limitations.
 
 Do not build a generic CRM, ERP, accounting system, fake payment flow, or customer account platform.
 
@@ -214,6 +215,8 @@ The app is the record of work, not a replacement for human communication. WhatsA
 The contact directory is an outreach list, not a permission to expose individual customer jobs or to send unsolicited repeated messages. Treat the launch as a useful service introduction, not a pressure campaign.
 
 ### Safe sharing rules
+- Owner general-business sharing belongs in Operations as “Share business link”; it shares the homepage and business contact details through a user-controlled WhatsApp composer.
+- The public landing-page “Share Namane Tyres” action is customer-oriented referral copy, not a message written as if the customer is Thapelo.
 - The public URL `/job/share/{shareId}` is specific to one job. It may expose that customer's progress, photos and messages to anyone who receives the link. **Never send a job-specific share link to the full contacts list.** Send it only to the customer associated with that job.
 - For a general introduction, share the public homepage `https://namane-tyres.vercel.app/` or a dedicated general introduction page. Do not use a live customer's job as a demo or testimonial without their explicit permission.
 - Do not claim that customers have praised/recommended the app unless the business has verified, permissioned testimonials. Prefer a concrete explanation of what the service lets customers do.
@@ -376,3 +379,13 @@ The product owner wants the 95 existing customer contacts introduced in one What
 - Website visitor/page-view counts begin after the tracking release and must not be described as historical Vercel Analytics totals. Clearly distinguish period counts from all-time operational totals. Count actual saved requests from `assistanceRequests`; opening the booking page is not a completed booking. A call/WhatsApp tap is not proof that a conversation happened.
 - Do not change Firestore client security rules for analytics. Write event records through the server-only Firebase Admin SDK. Validate event names, normalize paths, validate same-origin requests where Origin is present, bound payload size and event frequency, and keep dashboard responses private/no-store.
 - Before claiming the feature is live, confirm the commit is on `main`, wait for the matching Vercel production deployment to become READY, inspect build/runtime errors if it fails, then verify owner-only access, staff denial, event recording, and the 7-/30-day report on production. Do not ask the owner to QA while the matching deployment is still building.
+
+
+## Owner pricing, business sharing and analytics — October 2026
+
+- Operations includes a Services & prices tab. The owner can edit service names and amounts and publish the saved list to the public homepage. Initial prices supplied by the owner: Tyre fitting P40.00, Tubeless patch P40.00, Inside patch P40.00.
+- Pricing is stored server-side in Firestore `businessSettings/prices` through `/api/service-prices`. The public GET endpoint exposes only this price list; the write endpoint requires a valid Firebase owner role. Do not broaden public access to other business settings.
+- Public location/contact information currently supplied by the owner: near KFC, by the roadside car washes; call 72736456 or 75410091. If the owner changes these details later, update the public site and this file together.
+- General owner referral belongs in Operations → Share business link. A customer-facing Share Namane Tyres action may remain on the public site, but its copy must be neutral and customer-appropriate.
+- The owner Analytics page at `/admin/analytics` is separate from Vercel's aggregate dashboard and uses privacy-limited custom events in `siteAnalyticsEvents` plus operational Firestore records. Its numbers represent recorded activity only; page views, link taps and job-share opens are not automatically bookings or revenue. The API requires an authenticated Firebase user whose `admins/{uid}` role is `owner`.
+- Keep analytics and business pricing changes scoped to Namane Tyres' Firebase project. Never reuse BOEMO's collections, settings or credentials.

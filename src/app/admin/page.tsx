@@ -21,14 +21,21 @@ import {
   normalizePhone,
   type TyreInventoryItem,
   REQUEST_STATUSES,
+  DEFAULT_SERVICE_PRICES,
+  getServicePrices,
+  saveServicePrices,
+  type ServicePrice,
 } from "@/lib/firebase/data";
 import { parseWhatsAppVCard } from "@/lib/vcard";
 
+const OWNER_SHARE_MESSAGE = "Hi, it’s Thapelo from Namane Tyres. For tyre fitting and puncture repairs in Gaborone, view our services and request help here: https://namane-tyres.vercel.app/. Call 72736456 or 75410091. We are near KFC, beside the roadside car washes.";
+
 function Dashboard() {
-  const [tab, setTab] = useState<"requests" | "contacts" | "inventory">("requests");
+  const [tab, setTab] = useState<"requests" | "contacts" | "inventory" | "prices">("requests");
   const [requests, setRequests] = useState<AssistanceRequest[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [inventory, setInventory] = useState<TyreInventoryItem[]>([]);
+  const [servicePrices, setServicePrices] = useState<ServicePrice[]>(DEFAULT_SERVICE_PRICES.map((item) => ({ ...item })));
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState("");
@@ -43,14 +50,16 @@ function Dashboard() {
   async function load() {
     setLoading(true);
     try {
-      const [requestResult, contactResult, inventoryResult] = await Promise.all([
+      const [requestResult, contactResult, inventoryResult, priceResult] = await Promise.all([
         getAssistanceRequests(),
         getContacts(),
         getTyreInventory(),
+        getServicePrices(),
       ]);
       setRequests(requestResult);
       setContacts(contactResult);
       setInventory(inventoryResult);
+      setServicePrices(priceResult);
     } catch {
       setNotice("Operations data could not be loaded. If you are offline, only data already cached on this device may be available.");
     } finally {
@@ -87,6 +96,21 @@ function Dashboard() {
       setNotice("Request updated.");
     } catch {
       setNotice("That status could not be saved. Check the connection and try again.");
+    }
+  }
+
+  async function savePrices() {
+    const cleaned = servicePrices.map((item) => ({ ...item, name: item.name.trim(), price: Number(item.price) }));
+    if (cleaned.some((item) => !item.name || !Number.isFinite(item.price) || item.price < 0)) {
+      setNotice("Enter a service name and a valid non-negative price for every service.");
+      return;
+    }
+    try {
+      await saveServicePrices(cleaned);
+      setServicePrices(cleaned);
+      setNotice("Service prices saved and published to the public website.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Service prices could not be saved. Check the connection and try again.");
     }
   }
 
@@ -153,6 +177,7 @@ function Dashboard() {
           <div className="adminHeaderActions">
             <Link className="button buttonLight" href="/">Public site</Link>
             <Link className="button buttonLight" href="/admin/analytics">Analytics</Link>
+            <a className="button buttonLight" href={"https://wa.me/?text=" + encodeURIComponent(OWNER_SHARE_MESSAGE)} target="_blank" rel="noreferrer">Share business link</a>
             <Link className="button buttonPrimary" href="/book">Request form</Link>
             <Link className="button buttonPrimary" href="/admin/jobs">+ Add work / Job</Link>
           </div>
@@ -171,6 +196,7 @@ function Dashboard() {
           <button className={tab === "requests" ? "active" : ""} onClick={() => setTab("requests")}>Requests</button>
           <button className={tab === "contacts" ? "active" : ""} onClick={() => setTab("contacts")}>Customer contacts</button>
           <button className={tab === "inventory" ? "active" : ""} onClick={() => setTab("inventory")}>Tyre inventory</button>
+          <button className={tab === "prices" ? "active" : ""} onClick={() => setTab("prices")}>Services & prices</button>
           <Link className="adminTabLink" href="/admin/jobs">Jobs & progress</Link>
         </nav>
 
@@ -270,6 +296,24 @@ function Dashboard() {
               <div className="panelHeading"><div><span className="kicker">Tyre stock</span><h2>Inventory</h2></div><button className="button buttonPrimary" onClick={() => setDraft({ id: crypto.randomUUID(), size: "", brand: "", condition: "New", quantity: 1, price: "", available: true, notes: "" })}>Add tyre</button></div>
               {inventory.length === 0 ? <div className="emptyState"><p>No tyre inventory has been added yet.</p></div> : <div className="inventoryGrid">{inventory.map((item) => <article key={item.id}><div><strong>{item.size}</strong><span>{item.brand} · {item.condition}</span></div><b>{item.quantity} · {item.price || "Price not set"}</b><span>{item.available ? "Available" : "Not available"}</span><div className="actions"><button className="button buttonLight" onClick={() => setDraft({ ...item })}>Edit</button><button className="button buttonLight" onClick={() => void deleteTyreInventoryItem(item.id).then(() => setInventory((items) => items.filter((i) => i.id !== item.id))).catch(() => setNotice("Could not delete inventory item."))}>Delete</button></div></article>)}</div>}
               {draft && <div className="adminPanel nested"><h3>{inventory.some((i) => i.id === draft.id) ? "Edit" : "Add"} tyre</h3><div className="formGrid"><label>Size<input value={draft.size} onChange={(e) => setDraft({ ...draft, size: e.target.value })} /></label><label>Brand<input value={draft.brand} onChange={(e) => setDraft({ ...draft, brand: e.target.value })} /></label><label>Condition<select value={draft.condition} onChange={(e) => setDraft({ ...draft, condition: e.target.value as TyreInventoryItem["condition"] })}><option>New</option><option>Used</option><option>Retreaded</option><option>Other</option></select></label><label>Quantity<input type="number" min="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: Number(e.target.value) })} /></label><label>Price<input value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} /></label><label>Available<select value={String(draft.available)} onChange={(e) => setDraft({ ...draft, available: e.target.value === "true" })}><option value="true">Yes</option><option value="false">No</option></select></label><label className="fieldFull">Notes<textarea value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></label></div><div className="actions"><button className="button buttonPrimary" onClick={() => void saveInventory()}>Save</button><button className="button buttonLight" onClick={() => setDraft(null)}>Cancel</button></div></div>}
+            </div>
+          </section>
+        )}
+        
+        {tab === "prices" && (
+          <section className="adminContent">
+            <div className="adminPanel">
+              <div className="panelHeading"><div><span className="kicker">Customer-facing prices</span><h2>Services & prices</h2><p>Change these amounts whenever your prices change. Saving publishes them to the public website.</p></div></div>
+              <div className="formGrid">
+                {servicePrices.map((item, index) => (
+                  <div className="priceEditorRow" key={item.id}>
+                    <label>Service name<input value={item.name} onChange={(e) => setServicePrices((current) => current.map((price, i) => i === index ? { ...price, name: e.target.value } : price))} /></label>
+                    <label>Price (P)<input type="number" min="0" step="0.01" value={item.price} onChange={(e) => setServicePrices((current) => current.map((price, i) => i === index ? { ...price, price: e.target.value === "" ? 0 : Number(e.target.value) } : price))} /></label>
+                  </div>
+                ))}
+              </div>
+              <div className="actions"><button className="button buttonPrimary" type="button" onClick={() => void savePrices()}>Save & publish prices</button></div>
+              <p className="formTruth">Starting prices supplied by Namane Tyres: P40.00 each. The public site shows the saved amounts.</p>
             </div>
           </section>
         )}

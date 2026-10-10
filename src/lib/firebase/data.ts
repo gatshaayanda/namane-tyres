@@ -9,6 +9,12 @@ export type AssistanceRequest = { id:string; customerUid?:string; createdAt:stri
 export type TyreInventoryItem = { id:string; size:string; brand:string; condition:"New"|"Used"|"Retreaded"|"Other"; quantity:number; price:string; available:boolean; notes:string };
 export type Contact = { id:string; name:string; phone:string; whatsapp:boolean; whatsappBusiness:boolean; businessName:string; businessDescription:string; notes:string; source:string; createdAt:string; updatedAt:string };
 export type ContactInput = Omit<Contact,"id"|"createdAt"|"updatedAt">;
+export type ServicePrice = { id: string; name: string; price: number };
+export const DEFAULT_SERVICE_PRICES: ServicePrice[] = [
+  { id: "tyre-fitting", name: "Tyre fitting", price: 40 },
+  { id: "tubeless-patch", name: "Tubeless patch", price: 40 },
+  { id: "inside-patch", name: "Inside patch", price: 40 },
+];
 export const JOB_STATUSES = ["New","Accepted","In Progress","Ready / Awaiting Customer","Complete","Cancelled"] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 export const PAYMENT_STATUSES = ["Unpaid","Part-paid","Paid"] as const;
@@ -27,6 +33,25 @@ type PendingJobWrite={id:string;method:"POST"|"PATCH";job:Job};
 function readJobQueue():PendingJobWrite[]{try{return JSON.parse(localStorage.getItem(JOB_QUEUE_KEY)||"[]")}catch{return[]}}
 function writeJobQueue(items:PendingJobWrite[]){localStorage.setItem(JOB_QUEUE_KEY,JSON.stringify(items))}
 function queueJobWrite(item:PendingJobWrite){const queue=readJobQueue().filter(x=>x.id!==item.id);queue.push(item);writeJobQueue(queue)}
+
+export async function getServicePrices(): Promise<ServicePrice[]> {
+  const response = await fetch("/api/service-prices", { cache: "no-store" });
+  if (!response.ok) throw new Error("Service prices could not be loaded.");
+  const body = await response.json() as { services?: ServicePrice[] };
+  return Array.isArray(body.services) && body.services.length ? body.services : DEFAULT_SERVICE_PRICES.map((item) => ({ ...item }));
+}
+
+export async function saveServicePrices(services: ServicePrice[]) {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error("Please sign in to the Namane Tyres owner account again.");
+  const response = await fetch("/api/service-prices", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ services }),
+  });
+  const body = await response.json().catch(() => ({})) as { error?: string };
+  if (!response.ok) throw new Error(body.error || "Service prices could not be saved.");
+}
 
 export function normalizePhone(value:string){let phone=value.trim().replace(/[^\d+]/g,"");if(phone.startsWith("267")&&!phone.startsWith("+"))phone="+"+phone;if(/^7\d{7}$/.test(phone))phone="+267"+phone;return phone;}
 export function createAssistanceRequest(data:Omit<AssistanceRequest,"id">){const reference=doc(requestsCollection);const writePromise=setDoc(reference,data);return{id:reference.id,writePromise};}
