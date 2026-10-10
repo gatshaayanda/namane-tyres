@@ -1,9 +1,9 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const SHELL_CACHE = `namane-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `namane-static-${CACHE_VERSION}`;
 const PUBLIC_CACHE = `namane-public-${CACHE_VERSION}`;
 const PREFIX = "namane-";
-const APP_SHELL = ["/", "/book", "/offline", "/admin", "/admin/jobs", "/icon.svg", "/manifest.webmanifest", "/firebase-messaging-sw.js"];
+const APP_SHELL = ["/", "/welcome", "/book", "/offline", "/admin", "/admin/jobs", "/icon.svg", "/manifest.webmanifest", "/firebase-messaging-sw.js"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(precacheShell());

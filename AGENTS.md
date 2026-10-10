@@ -397,3 +397,32 @@ The product owner wants the 95 existing customer contacts introduced in one What
 - Operations → Services & prices is CRUD for the seeded fallback list: edit names and amounts, add rows, remove rows, then save & publish. The seeded starting values are Tyre fitting P40.00, Tubeless patch P40.00 and Inside patch P40.00. Keep at least one price row and the API's owner-only write check. The public section groups tubeless/inside patch prices under Puncture repair; other owner-added prices appear in the same combined service grid.
 - The /admin/analytics page currently uses Namane's first-party siteAnalyticsEvents tracker. It does not import Vercel Analytics. Its visitor/page-view totals are a limited subset, not total site traffic; label them “tracked visitors/page views” and tell the owner to use Vercel Analytics for overall traffic. Never claim the datasets have been merged until a real authenticated integration exists.
 - To configure Firebase Web Push, open Firebase Console → the Namane Tyres Firebase project → Project settings (gear) → Cloud Messaging → Web Push certificates → generate or copy the public VAPID key. Add that public key to Vercel as NEXT_PUBLIC_FIREBASE_VAPID_KEY for the relevant deployment environments and redeploy. Never put the private key in client code or commit secrets. Firebase Admin credentials remain server-only.
+
+
+## Golden system — WhatsApp → normal browser → PWA install (October 2026)
+
+This section supersedes older install/handoff wording if any detail conflicts. Preserve Namane's customer-facing layout, service/request flow, offline queues, update controls and existing service worker; change only the PWA journey required for reliable handoff/install.
+
+### One controller and separate states
+- `src/app/pwa-register.tsx` is the single root PWA controller rendered from `src/app/layout.tsx`. Do not add another install controller, route-specific install button, nested browser gate or legacy prompt.
+- `src/app/layout.tsx` runs a parser-time `beforeInteractive` bootstrap that captures `beforeinstallprompt`, calls `preventDefault()`, retains the event on `window.__namaneDeferredInstallPrompt`, and announces the `namane:installprompt` contract. This avoids losing the event before React hydrates.
+- The embedded-browser gate is separate from install state and appears only after browser detection completes. Installation UI is hidden while the gate is visible; the gate has one primary **OPEN IN BROWSER** action and an exact-route copy-link fallback.
+- Android uses a Chrome intent URL preserving the current URL path/query/hash. iOS does not allow a web page to force Safari open; attempt a user-gesture new tab and provide copy-link plus WhatsApp's native “Open in Safari”/Share fallback. Desktop uses a new tab when allowed. Never claim the host app definitely opened an external browser when it cannot be verified.
+- An in-app browser cannot always be escaped programmatically on iOS. The visible copy-link/native-menu fallback is an intentional platform limitation, not a reason to create a redirect loop.
+
+### Install behavior and no-silent-failure rule
+- The single persistent **Install Namane Tyres** action is shown in normal browsers while not installed/standalone. Installation is optional; the customer can browse and request help without installing.
+- If `beforeinstallprompt` was captured, clicking Install calls the retained event's `prompt()` directly from that click gesture. Do not add another confirmation modal or navigation step. If the prompt is dismissed, consumed or throws, open the platform-specific guidance panel instead.
+- If the native event never appears, clicking Install always opens guidance: Android Chrome menu → Install app/Add to Home screen; iPhone/iPad Safari Share → Add to Home Screen; desktop Chrome/Edge address-bar install icon or browser menu when eligible. JavaScript cannot force the native prompt.
+- `appinstalled` clears the retained event, marks the app installed for this session and hides install promotion. Display-mode `standalone` and iOS `navigator.standalone` also suppress it.
+- Do not show install promotion on `/account`, `/admin`, `/job/share/{shareId}` or API routes. Do not show install promotion over the embedded-browser gate. Do not auto-open install help on page load.
+- Keep the existing Refresh app / Update app behavior and queued offline work intact. Service-worker cache version is bumped to `v9`; `public/sw.js` includes `/welcome` in the best-effort shell and does not cache APIs, private Firebase responses or large media.
+
+### Required verification checklist
+1. Inspect `src/app/layout.tsx`, `src/app/pwa-register.tsx`, `src/app/pwa.css`, `src/app/manifest.ts`, `public/sw.js`, `public/icon.svg` and the actual production deployment before editing.
+2. Test WhatsApp Android: gate appears, OPEN IN BROWSER launches Chrome where supported, and a deep route keeps its path/query/hash. Test iOS WhatsApp separately: use Open in Safari where available or copy/paste the exact link; a page cannot force Safari to launch.
+3. Test direct Chrome/Safari/Edge entry: no gate, install action visible if not installed, native prompt called directly when an event exists, platform fallback opens when it does not.
+4. Test `appinstalled` and standalone mode; install promotion must disappear. Verify account/admin/job-share routes do not get install promotion and public pages remain usable without installation.
+5. Inspect `/manifest.webmanifest`, icon URLs, HTTPS, service-worker registration at `/sw.js` and root scope, cache version, console errors and browser installability diagnostics. Manifest currently uses `/icon.svg`; do not claim raster-icon/installability checks passed unless verified on a browser/device.
+6. Run `npx tsc --noEmit`, `npm run lint`, and `npm run build`. Verify final diff, branch head, and the exact matching Vercel production deployment reaches READY before requesting owner testing.
+7. Source inspection or a READY deployment alone is not proof of WhatsApp external handoff or OS-native prompt behavior. Record actual device/browser tests performed and any unavailable test honestly.

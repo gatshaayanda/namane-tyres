@@ -19,6 +19,7 @@ function detectBrowserEnvironment(): BrowserEnvironment {
 
 export default function PwaRegister() {
   const pathname = usePathname();
+  const [environmentReady, setEnvironmentReady] = useState(false);
   const [offline, setOffline] = useState(false);
   const [installable, setInstallable] = useState(false);
   const [standalone, setStandalone] = useState(false);
@@ -40,13 +41,16 @@ export default function PwaRegister() {
     setBrowserEnvironment(env);
     setOffline(!navigator.onLine);
     setStandalone(env.standalone);
+    setEnvironmentReady(true);
 
     const online = () => setOffline(false);
     const offlineNow = () => setOffline(true);
-    const installPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setInstallable(true);
+    const syncInstallPrompt = () => {
+      const event = window.__namaneDeferredInstallPrompt;
+      if (event) {
+        setDeferredPrompt(event);
+        setInstallable(true);
+      }
     };
     const appInstalled = () => {
       setStandalone(true);
@@ -57,8 +61,9 @@ export default function PwaRegister() {
 
     window.addEventListener("online", online);
     window.addEventListener("offline", offlineNow);
-    window.addEventListener("beforeinstallprompt", installPrompt);
-    window.addEventListener("appinstalled", appInstalled);
+    window.addEventListener("namane:installprompt", syncInstallPrompt);
+    window.addEventListener("namane:appinstalled", appInstalled);
+    syncInstallPrompt();
 
     const controllerChanged = () => window.location.reload();
     if ("serviceWorker" in navigator) {
@@ -82,8 +87,8 @@ export default function PwaRegister() {
     return () => {
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offlineNow);
-      window.removeEventListener("beforeinstallprompt", installPrompt);
-      window.removeEventListener("appinstalled", appInstalled);
+      window.removeEventListener("namane:installprompt", syncInstallPrompt);
+      window.removeEventListener("namane:appinstalled", appInstalled);
       navigator.serviceWorker?.removeEventListener("controllerchange", controllerChanged);
     };
   }, []);
@@ -139,31 +144,56 @@ export default function PwaRegister() {
   }
 
   async function install() {
-    if (!deferredPrompt) {
-      setShowInstallHelp(value => !value);
+    const prompt = deferredPrompt || window.__namaneDeferredInstallPrompt || null;
+    if (!prompt) {
+      setShowInstallHelp(true);
       return;
     }
-    await deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    setInstallable(false);
-    if (choice.outcome === "accepted") setShowInstallHelp(false);
-    else setShowInstallHelp(true);
+    // Invoke the retained native prompt directly from the user's click gesture.
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      window.__namaneDeferredInstallPrompt = null;
+      setDeferredPrompt(null);
+      setInstallable(false);
+      if (choice.outcome === "accepted") setShowInstallHelp(false);
+      else setShowInstallHelp(true);
+    } catch (error) {
+      console.warn("[Namane Tyres] native install prompt failed", error);
+      window.__namaneDeferredInstallPrompt = null;
+      setDeferredPrompt(null);
+      setInstallable(false);
+      setShowInstallHelp(true);
+    }
   }
 
   function openInBrowser() {
     const url = window.location.href;
     if (browserEnvironment.android) {
-      window.location.href = "intent://" + url.replace("https://", "").replace("http://", "") + "#Intent;scheme=https;package=com.android.chrome;end";
-      setHandoffMessage("If Chrome did not open, use the ⋮ menu in WhatsApp and choose Open in browser.");
+      // Chrome intent retains the complete URL, including deep route and query/hash.
+      const target = url.replace(/^https?:\\/\\//i, "");
+      window.location.href = `intent://${target}#Intent;scheme=https;package=com.android.chrome;end`;
+      setHandoffMessage("If Chrome did not open, use the WhatsApp menu (⋮) and choose Open in browser, or copy this page link.");
       return;
     }
     if (browserEnvironment.ios) {
-      setHandoffMessage("Tap the menu or Share icon in WhatsApp, then choose Open in Browser or Open in Safari. If that option is unavailable, copy the link and paste it into Safari.");
+      // iOS does not permit a web page to force Safari to launch.
+      const opened = window.open(url, "_blank");
+      if (opened) opened.opener = null;
+      const copyPromise = navigator.clipboard?.writeText(url);
+      if (copyPromise) {
+        void copyPromise.then(() => setHandoffMessage(opened
+          ? "If the new page is still inside this app, the link is copied. Open Safari, paste it in the address bar, and go."
+          : "Link copied. Open Safari, paste it in the address bar, and go. You can also use the app menu → Open in Safari."))
+          .catch(() => setHandoffMessage("Use the WhatsApp menu or Share icon and choose Open in Safari. If unavailable, copy this page address and paste it into Safari."));
+      } else {
+        setHandoffMessage("Opening Safari is controlled by iOS. Use the WhatsApp menu or Share icon → Open in Safari; if unavailable, copy this page link into Safari.");
+      }
       return;
     }
-    const opened = window.open(url, "_blank", "noopener,noreferrer");
-    if (!opened) setHandoffMessage("Use this app's menu to open the link in your normal browser.");
+    const opened = window.open(url, "_blank");
+    if (opened) opened.opener = null;
+    if (!opened) setHandoffMessage("Your browser blocked a new tab. Copy this page link and open it in Chrome, Edge or your normal browser.");
   }
 
   async function copyCurrentLink() {
@@ -175,7 +205,9 @@ export default function PwaRegister() {
     }
   }
 
-  const showBrowserHandoff = browserEnvironment.embedded && !browserEnvironment.standalone;
+  const showBrowserHandoff = environmentReady && browserEnvironment.embedded && !browserEnvironment.standalone;
+  const privateOrAccountRoute = pathname === "/account" || pathname.startsWith("/account/") || pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/job/share/") || pathname.startsWith("/api/");
+  const showInstallPromotion = environmentReady && !standalone && !showBrowserHandoff && !privateOrAccountRoute;
 
   return <>
     {showBrowserHandoff && <div role="alertdialog" aria-modal="true" aria-labelledby="namane-browser-title" style={{position:"fixed",inset:0,zIndex:2147483647,display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:"rgba(17,24,39,.86)",backdropFilter:"blur(5px)"}}>
@@ -183,19 +215,19 @@ export default function PwaRegister() {
         <div style={{fontSize:".72rem",fontWeight:900,letterSpacing:".14em",color:"#b45309"}}>NAMANE TYRES · CUSTOMER ACCESS</div>
         <h2 id="namane-browser-title" style={{fontSize:"clamp(1.8rem,7vw,2.5rem)",lineHeight:1.05,letterSpacing:"-.04em",margin:"12px 0"}}>Open Namane Tyres in your browser.</h2>
         <p style={{lineHeight:1.65,color:"#475569",margin:"0 0 18px"}}>You opened this link inside another app. Opening it in Chrome or Safari gives you the best experience for requesting tyre help, returning to your requests and optionally saving Namane Tyres to your home screen.</p>
-        {browserEnvironment.android ? <button type="button" onClick={openInBrowser} style={{width:"100%",minHeight:48,border:0,borderRadius:10,background:"#d97706",color:"#fff",fontWeight:900,cursor:"pointer"}}>OPEN IN CHROME ↗</button> : <button type="button" onClick={openInBrowser} style={{width:"100%",minHeight:48,border:0,borderRadius:10,background:"#d97706",color:"#fff",fontWeight:900,cursor:"pointer"}}>HOW TO OPEN IN BROWSER</button>}
+        <button type="button" onClick={openInBrowser} style={{width:"100%",minHeight:48,border:0,borderRadius:10,background:"#d97706",color:"#fff",fontWeight:900,cursor:"pointer"}}>OPEN IN BROWSER ↗</button>
         <button type="button" onClick={() => void copyCurrentLink()} style={{width:"100%",minHeight:46,marginTop:10,border:"1px solid #d9e0e7",borderRadius:10,background:"#fff",color:"#111827",fontWeight:900,cursor:"pointer"}}>COPY LINK FOR CHROME / SAFARI</button>
         {handoffMessage && <p role="status" aria-live="polite" style={{margin:"12px 0 0",padding:12,borderRadius:10,background:"#f1f5f9",fontSize:".9rem",lineHeight:1.5}}>{handoffMessage}</p>}
         <p style={{fontSize:".8rem",color:"#64748b",lineHeight:1.5,margin:"14px 0 0"}}>You do not need to install an app to use Namane Tyres. Installation is optional after the page opens in your browser.</p>
       </section>
     </div>}
     {offline && <div className="offlineBanner" role="status">Offline mode · saved work stays on this device. New requests and job changes will sync when connection returns.</div>}
-    {!standalone && !showBrowserHandoff && <div className="pwaInstallGroup">
+    {showInstallPromotion && <div className="pwaInstallGroup">
       <button className="pwaInstall" type="button" onClick={() => void install()}>{installable ? "Install Namane Tyres" : "Save Namane Tyres to phone"}</button>
       {showInstallHelp && <div className="pwaInstallHelp" role="dialog" aria-label="How to save Namane Tyres">
         <button className="pwaHelpClose" type="button" aria-label="Close install instructions" onClick={() => setShowInstallHelp(false)}>×</button>
         <strong>Keep Namane Tyres one tap away</strong>
-        <p><b>Android:</b> open Chrome&apos;s menu (⋮), then choose <b>Install app</b> or <b>Add to Home screen</b>. If the Install button appeared above, use it.</p>
+        {browserEnvironment.android ? <p><b>Android:</b> in Chrome, open the menu (⋮), then choose <b>Install app</b> or <b>Add to Home screen</b> where available.</p> : <p><b>Desktop:</b> in Chrome or Edge, use the install icon in the address bar if shown, or open the browser menu and choose <b>Install Namane Tyres</b> where available. The browser decides whether installation is eligible.</p>}
         <p><b>iPhone:</b> open this page in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>
         <p>You can still use the website without installing it.</p>
       </div>}
@@ -212,5 +244,9 @@ declare global {
   interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
     userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+  }
+  interface Window {
+    __namaneDeferredInstallPrompt?: BeforeInstallPromptEvent | null;
+    __namaneInstallPromptBootstrap?: boolean;
   }
 }
