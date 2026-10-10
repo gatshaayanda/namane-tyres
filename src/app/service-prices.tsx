@@ -5,6 +5,13 @@ import { DEFAULT_SERVICE_PRICES, getServicePrices, type ServicePrice } from "@/l
 
 type ServiceDescription = readonly [string, string, string];
 
+function matchesPrice(title: string, price: ServicePrice) {
+  const titleKey = title.trim().toLowerCase();
+  const name = price.name.trim().toLowerCase();
+  if (titleKey === "puncture repair") return /patch|puncture repair/.test(name) || /patch/.test(price.id);
+  return name === titleKey || price.id === titleKey.replace(/\s+/g, "-");
+}
+
 export default function ServicePrices({ descriptions }: { descriptions: readonly ServiceDescription[] }) {
   const [prices, setPrices] = useState<ServicePrice[]>(DEFAULT_SERVICE_PRICES);
 
@@ -18,42 +25,37 @@ export default function ServicePrices({ descriptions }: { descriptions: readonly
     return () => { active = false; };
   }, []);
 
-  const usedPriceIds = new Set<string>();
-  function pricesFor(title: string) {
-    const titleKey = title.trim().toLowerCase();
-    const matched = prices.filter((price) => {
-      const name = price.name.trim().toLowerCase();
-      if (titleKey === "puncture repair") return /patch|puncture repair/.test(name) || /patch/.test(price.id);
-      return name === titleKey || price.id === titleKey.replace(/\s+/g, "-");
-    });
-    matched.forEach((price) => usedPriceIds.add(price.id));
-    return matched;
-  }
+  const describedServices = descriptions.map(([icon, title, detail]) => ({
+    icon,
+    title,
+    detail,
+    matchedPrices: prices.filter((price) => matchesPrice(title, price)),
+  }));
+  const additionalPrices = prices.filter((price) =>
+    !describedServices.some((service) => service.matchedPrices.some((matched) => matched.id === price.id)),
+  );
 
   return (
     <div className="cards serviceCombinedCards">
-      {descriptions.map(([icon, title, detail]) => {
-        const matchedPrices = pricesFor(title);
-        return (
-          <article className="card serviceCombinedCard" key={title}>
-            <div className="cardIcon">{icon}</div>
-            <h3>{title}</h3>
-            <p>{detail}</p>
-            {matchedPrices.length > 0 && (
-              <div className="servicePriceInline">
-                <span className="kicker">{matchedPrices.length > 1 ? "Published prices" : "Current price"}</span>
-                {matchedPrices.map((price) => (
-                  <div className="servicePriceLine" key={price.id}>
-                    <span>{price.name}</span>
-                    <strong>P{price.price.toFixed(2)}</strong>
-                  </div>
-                ))}
-              </div>
-            )}
-          </article>
-        );
-      })}
-      {prices.filter((price) => !usedPriceIds.has(price.id)).map((price) => (
+      {describedServices.map(({ icon, title, detail, matchedPrices }) => (
+        <article className="card serviceCombinedCard" key={title}>
+          <div className="cardIcon">{icon}</div>
+          <h3>{title}</h3>
+          <p>{detail}</p>
+          {matchedPrices.length > 0 && (
+            <div className="servicePriceInline">
+              <span className="kicker">{matchedPrices.length > 1 ? "Published prices" : "Current price"}</span>
+              {matchedPrices.map((price) => (
+                <div className="servicePriceLine" key={price.id}>
+                  <span>{price.name}</span>
+                  <strong>P{price.price.toFixed(2)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+      ))}
+      {additionalPrices.map((price) => (
         <article className="card serviceCombinedCard" key={price.id}>
           <div className="cardIcon">🧾</div>
           <span className="kicker">Published price</span>
