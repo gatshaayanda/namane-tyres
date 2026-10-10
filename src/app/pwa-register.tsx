@@ -14,7 +14,6 @@ function detectBrowserEnvironment(): BrowserEnvironment {
   const standalone = window.matchMedia("(display-mode: standalone)").matches ||
     Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
   const embedded = /WhatsApp|Instagram|FBAN|FBAV|Messenger|Line|Twitter|TikTok|Snapchat/i.test(ua) || (android && /wv/i.test(ua));
-    (android && /; wv\\)/i.test(ua));
   return { embedded, android, ios, standalone };
 }
 
