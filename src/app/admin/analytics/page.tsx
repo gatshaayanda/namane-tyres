@@ -50,7 +50,7 @@ function friendlyPage(path: string) {
 }
 
 function Metric({ label, value, note }: { label: string; value: number | string; note: string }) {
-  return <article><span>{label}</span><strong>{value.toLocaleString("en-US")}</strong><small>{note}</small></article>;
+  return <article><span>{label}</span><strong>{typeof value === "number" ? value.toLocaleString("en-US") : value}</strong><small>{note}</small></article>;
 }
 
 function Breakdown({ title, rows, emptyText }: { title: string; rows: BreakdownRow[]; emptyText: string }) {

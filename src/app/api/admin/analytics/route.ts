@@ -22,7 +22,7 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: status === 500 ? "Analytics are temporarily unavailable." : message }, { status, headers });
 }
 
-function countBy(items: Array<Record<string, unknown>>, key: string, valueKey = "event") {
+function countBy(items: Array<Record<string, unknown>>, key: string) {
   const counts = new Map<string, number>();
   for (const item of items) {
     const label = String(item[key] ?? "Unknown");
