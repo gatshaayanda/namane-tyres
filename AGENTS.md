@@ -366,3 +366,13 @@ The product owner wants the 95 existing customer contacts introduced in one What
 - Test `/welcome` at 320, 360 and 390 CSS-pixel widths; browse, Request Help, My requests, install guidance and Refresh app must remain usable without horizontal overflow.
 - Anonymous sessions must fail gracefully if Firebase Anonymous Authentication is disabled or unavailable; public browsing and Request Help must remain accessible.
 - Customer request history is browser-scoped until a recoverable account or verified identity-linking flow is deliberately implemented. Do not merge records based only on a typed phone number.
+
+
+## Owner-friendly analytics — October 2026
+
+- Namane Tyres owner analytics live at `/admin/analytics`, linked from the Operations header. Use the BoardSignal founder-side dashboard as a clarity/reference pattern, but keep Namane reporting focused on website visitors, page views, booking-page views, call/WhatsApp taps, saved customer requests, job creation/completion/payment status, and job-progress-link activity.
+- Analytics dashboard API is owner-only: verify Firebase ID tokens server-side and require `admins/{uid}.role === "owner"`. Do not expose customer names, phone numbers, private job details, job-share IDs, or analytics records to staff or public visitors.
+- Public event tracking is allowlisted and aggregate-oriented. Store only a random first-party browser identifier, normalized page category, event name, referrer hostname, device category, and timestamp. Never store IP addresses, full referrer URLs, customer contact information, query strings, or job-share IDs in analytics events.
+- Website visitor/page-view counts begin after the tracking release and must not be described as historical Vercel Analytics totals. Clearly distinguish period counts from all-time operational totals. Count actual saved requests from `assistanceRequests`; opening the booking page is not a completed booking. A call/WhatsApp tap is not proof that a conversation happened.
+- Do not change Firestore client security rules for analytics. Write event records through the server-only Firebase Admin SDK. Validate event names, normalize paths, validate same-origin requests where Origin is present, bound payload size and event frequency, and keep dashboard responses private/no-store.
+- Before claiming the feature is live, confirm the commit is on `main`, wait for the matching Vercel production deployment to become READY, inspect build/runtime errors if it fails, then verify owner-only access, staff denial, event recording, and the 7-/30-day report on production. Do not ask the owner to QA while the matching deployment is still building.

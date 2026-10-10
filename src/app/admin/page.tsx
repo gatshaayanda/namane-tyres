@@ -152,6 +152,7 @@ function Dashboard() {
           </div>
           <div className="adminHeaderActions">
             <Link className="button buttonLight" href="/">Public site</Link>
+            <Link className="button buttonLight" href="/admin/analytics">Analytics</Link>
             <Link className="button buttonPrimary" href="/book">Request form</Link>
             <Link className="button buttonPrimary" href="/admin/jobs">+ Add work / Job</Link>
           </div>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import PwaRegister from "@/app/pwa-register";
+import AnalyticsTracker from "@/app/analytics-tracker";
 import "./globals.css";
 import "./pwa.css";
 
@@ -24,5 +25,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#111827", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><PwaRegister />{children}<Analytics /><SpeedInsights /></body></html>;
+  return <html lang="en"><body><AnalyticsTracker /><PwaRegister />{children}<Analytics /><SpeedInsights /></body></html>;
 }
