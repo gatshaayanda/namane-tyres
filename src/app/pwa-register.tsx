@@ -21,7 +21,6 @@ export default function PwaRegister() {
   const pathname = usePathname();
   const [environmentReady, setEnvironmentReady] = useState(false);
   const [offline, setOffline] = useState(false);
-  const [installable, setInstallable] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [updateWaiting, setUpdateWaiting] = useState(false);
@@ -49,12 +48,10 @@ export default function PwaRegister() {
       const event = window.__namaneDeferredInstallPrompt;
       if (event) {
         setDeferredPrompt(event);
-        setInstallable(true);
       }
     };
     const appInstalled = () => {
       setStandalone(true);
-      setInstallable(false);
       setShowInstallHelp(false);
       setDeferredPrompt(null);
     };
@@ -155,14 +152,12 @@ export default function PwaRegister() {
       const choice = await prompt.userChoice;
       window.__namaneDeferredInstallPrompt = null;
       setDeferredPrompt(null);
-      setInstallable(false);
       if (choice.outcome === "accepted") setShowInstallHelp(false);
       else setShowInstallHelp(true);
     } catch (error) {
       console.warn("[Namane Tyres] native install prompt failed", error);
       window.__namaneDeferredInstallPrompt = null;
       setDeferredPrompt(null);
-      setInstallable(false);
       setShowInstallHelp(true);
     }
   }
@@ -171,7 +166,7 @@ export default function PwaRegister() {
     const url = window.location.href;
     if (browserEnvironment.android) {
       // Chrome intent retains the complete URL, including deep route and query/hash.
-      const target = url.replace(/^https?:\\/\\//i, "");
+      const target = url.slice(url.indexOf("://") + 3);
       window.location.href = `intent://${target}#Intent;scheme=https;package=com.android.chrome;end`;
       setHandoffMessage("If Chrome did not open, use the WhatsApp menu (⋮) and choose Open in browser, or copy this page link.");
       return;
@@ -223,7 +218,7 @@ export default function PwaRegister() {
     </div>}
     {offline && <div className="offlineBanner" role="status">Offline mode · saved work stays on this device. New requests and job changes will sync when connection returns.</div>}
     {showInstallPromotion && <div className="pwaInstallGroup">
-      <button className="pwaInstall" type="button" onClick={() => void install()}>{installable ? "Install Namane Tyres" : "Save Namane Tyres to phone"}</button>
+      <button className="pwaInstall" type="button" onClick={() => void install()}>Install Namane Tyres</button>
       {showInstallHelp && <div className="pwaInstallHelp" role="dialog" aria-label="How to save Namane Tyres">
         <button className="pwaHelpClose" type="button" aria-label="Close install instructions" onClick={() => setShowInstallHelp(false)}>×</button>
         <strong>Keep Namane Tyres one tap away</strong>
