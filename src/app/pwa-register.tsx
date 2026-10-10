@@ -13,7 +13,7 @@ function detectBrowserEnvironment(): BrowserEnvironment {
   const ios = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia("(display-mode: standalone)").matches ||
     Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  const embedded = /WhatsApp|Instagram|FBAN|FBAV|Messenger|Line\\/|Twitter|TikTok|Snapchat/i.test(ua) ||
+  const embedded = /WhatsApp|Instagram|FBAN|FBAV|Messenger|Line|Twitter|TikTok|Snapchat/i.test(ua) || (android && /;\\s*wv/i.test(ua));
     (android && /; wv\\)/i.test(ua));
   return { embedded, android, ios, standalone };
 }
@@ -155,7 +155,7 @@ export default function PwaRegister() {
   function openInBrowser() {
     const url = window.location.href;
     if (browserEnvironment.android) {
-      window.location.href = "intent://" + url.replace(/^https?:\\/\\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
+      window.location.href = "intent://" + url.replace("https://", "").replace("http://", "") + "#Intent;scheme=https;package=com.android.chrome;end";
       setHandoffMessage("If Chrome did not open, use the ⋮ menu in WhatsApp and choose Open in browser.");
       return;
     }
