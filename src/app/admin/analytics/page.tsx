@@ -173,7 +173,7 @@ function AnalyticsDashboard() {
 
             <section className="adminPanel">
               <div className="panelHeading"><div><span className="kicker">Traffic source</span><h2>This is not the Vercel Analytics total.</h2></div></div>
-              <p>This page counts only events recorded by Namane Tyres' own first-party tracker. It does not currently import Vercel Analytics. Vercel can therefore show higher visitor and page-view totals for the same dates. Use Vercel Analytics for overall website traffic; use this report for Namane-tracked actions and the operational requests/jobs below. Do not treat these traffic counts as a complete total or add them to Vercel's counts.</p>
+              <p>This page counts only events recorded by Namane Tyres&apos; own first-party tracker. It does not currently import Vercel Analytics. Vercel can therefore show higher visitor and page-view totals for the same dates. Use Vercel Analytics for overall website traffic; use this report for Namane-tracked actions and the operational requests/jobs below. Do not treat these traffic counts as a complete total or add them to Vercel&apos;s counts.</p>
             </section>
 
             <section className="adminPanel">
