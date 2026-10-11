@@ -426,3 +426,12 @@ This section supersedes older install/handoff wording if any detail conflicts. P
 5. Inspect `/manifest.webmanifest`, icon URLs, HTTPS, service-worker registration at `/sw.js` and root scope, cache version, console errors and browser installability diagnostics. Manifest currently uses `/icon.svg`; do not claim raster-icon/installability checks passed unless verified on a browser/device.
 6. Run `npx tsc --noEmit`, `npm run lint`, and `npm run build`. Verify final diff, branch head, and the exact matching Vercel production deployment reaches READY before requesting owner testing.
 7. Source inspection or a READY deployment alone is not proof of WhatsApp external handoff or OS-native prompt behavior. Record actual device/browser tests performed and any unavailable test honestly.
+
+
+## Owner financial report — October 2026
+
+- The owner-only `/admin/analytics` report includes a financial overview computed from existing private `jobs` records. It uses the selected 7-day or 30-day range by **job creation date**.
+- Amounts are displayed in Botswana pula (P). Cancelled jobs are excluded from recorded job value and service totals. Jobs without a valid non-negative amount are counted separately and contribute zero to totals until corrected.
+- “Value marked paid” sums the full amount of jobs currently marked `Paid`; “Unpaid job value” sums jobs currently marked `Unpaid`. `Part-paid` jobs show their full job value and count separately; because the current schema does not record the amount received or payment transactions/payment dates, do not treat these figures as a cashbook, payment-date report, bank balance, profit, or verified cash collected.
+- Service breakdowns show recorded job value and job count by the service text saved on each job. They are not profit margins: costs, parts, expenses, and supplier purchases are not recorded here.
+- Keep the owner role check on the API. Do not expose job financial amounts through public job-share pages or public analytics events.

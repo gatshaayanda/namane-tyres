@@ -72,6 +72,39 @@ export async function GET(request: Request) {
     const sharedActions = publicJobs.reduce((sum, job) => sum + numeric((job.shareStats as Record<string, unknown> | undefined)?.engagements), 0);
     const earliestEvent = events.map((event) => String(event.createdAt || "")).filter(Boolean).sort()[0] || null;
 
+    // Financial reporting is grouped by job creation date because current job
+    // records do not store payment transactions or a payment date.
+    const jobsInRange = jobs.filter((job) =>
+      typeof job.createdAt === "string" && job.createdAt >= since && job.createdAt <= until
+    );
+    const activeJobsInRange = jobsInRange.filter((job) => job.status !== "Cancelled");
+    const amountOf = (value: unknown): number | null => {
+      if (typeof value === "number") return Number.isFinite(value) && value >= 0 ? value : null;
+      if (typeof value !== "string" || !value.trim()) return null;
+      const cleaned = value.replace(/[^0-9.-]/g, "");
+      if (!cleaned || cleaned === "." || cleaned === "-") return null;
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+    };
+    const amountSum = (items: Array<Record<string, unknown>>) =>
+      items.reduce((sum, job) => sum + (amountOf(job.amount) ?? 0), 0);
+    const paidJobsInRange = activeJobsInRange.filter((job) => job.paymentStatus === "Paid");
+    const unpaidJobsInRange = activeJobsInRange.filter((job) => job.paymentStatus === "Unpaid");
+    const partPaidJobsInRange = activeJobsInRange.filter((job) => job.paymentStatus === "Part-paid");
+    const serviceTotals = new Map<string, { count: number; value: number }>();
+    for (const job of activeJobsInRange) {
+      const label = String(job.service || "Service not specified").trim() || "Service not specified";
+      const total = serviceTotals.get(label) ?? { count: 0, value: 0 };
+      total.count += 1;
+      total.value += amountOf(job.amount) ?? 0;
+      serviceTotals.set(label, total);
+    }
+    const financialServices = [...serviceTotals.entries()]
+      .map(([label, total]) => ({ label, count: total.count, value: total.value }))
+      .sort((a, b) => b.value - a.value || b.count - a.count || a.label.localeCompare(b.label))
+      .slice(0, 6);
+    const jobsMissingAmount = activeJobsInRange.filter((job) => amountOf(job.amount) === null).length;
+
     return NextResponse.json({
       ok: true,
       rangeDays,
@@ -100,6 +133,17 @@ export async function GET(request: Request) {
         sharedLinkViewsTotal: sharedViews,
         sharedLinkActionsTotal: sharedActions,
         partialJobs: jobSnapshot.size >= 5000 || publicJobSnapshot.size >= 5000,
+      },
+      financial: {
+        jobsCount: activeJobsInRange.length,
+        cancelledJobsCount: jobsInRange.filter((job) => job.status === "Cancelled").length,
+        recordedJobValue: amountSum(activeJobsInRange),
+        paidJobValue: amountSum(paidJobsInRange),
+        unpaidJobValue: amountSum(unpaidJobsInRange),
+        partPaidJobValue: amountSum(partPaidJobsInRange),
+        partPaidJobsCount: partPaidJobsInRange.length,
+        jobsMissingAmount,
+        services: financialServices,
       },
     }, { headers });
   } catch (error) {

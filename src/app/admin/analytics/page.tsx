@@ -35,6 +35,17 @@ type AnalyticsSummary = {
     sharedLinkActionsTotal: number;
     partialJobs: boolean;
   };
+  financial: {
+    jobsCount: number;
+    cancelledJobsCount: number;
+    recordedJobValue: number;
+    paidJobValue: number;
+    unpaidJobValue: number;
+    partPaidJobValue: number;
+    partPaidJobsCount: number;
+    jobsMissingAmount: number;
+    services: Array<{ label: string; count: number; value: number }>;
+  };
 };
 
 function friendlyPage(path: string) {
@@ -51,6 +62,30 @@ function friendlyPage(path: string) {
 
 function Metric({ label, value, note }: { label: string; value: number | string; note: string }) {
   return <article><span>{label}</span><strong>{typeof value === "number" ? value.toLocaleString("en-US") : value}</strong><small>{note}</small></article>;
+}
+
+function pula(value: number) {
+  return "P" + value.toLocaleString("en-BW", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function MoneyBreakdown({ rows }: { rows: Array<{ label: string; count: number; value: number }> }) {
+  if (!rows.length) return <div className="emptyState"><p>Service totals will appear when jobs are recorded.</p></div>;
+  const max = Math.max(1, ...rows.map((row) => row.value));
+  return (
+    <div className="detailList">
+      {rows.map((row) => (
+        <div key={row.label}>
+          <dt>{row.label}<br /><span>{row.count} {row.count === 1 ? "job" : "jobs"}</span></dt>
+          <dd>
+            <strong>{pula(row.value)}</strong>
+            <span aria-hidden="true" style={{ display: "block", height: 7, marginTop: 7, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
+              <span style={{ display: "block", width: Math.max(3, row.value / max * 100) + "%", height: "100%", background: "#0f766e", borderRadius: 99 }} />
+            </span>
+          </dd>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Breakdown({ title, rows, emptyText }: { title: string; rows: BreakdownRow[]; emptyText: string }) {
@@ -115,7 +150,7 @@ function AnalyticsDashboard() {
           <div>
             <span className="kicker">Namane Tyres · Owner report</span>
             <h1>How is the business doing?</h1>
-            <p>Website activity, customer requests and job progress in one place.</p>
+            <p>Money recorded from jobs first, then customer and website activity.</p>
           </div>
           <div className="adminHeaderActions">
             <Link className="button buttonLight" href="/admin">Operations</Link>
@@ -137,6 +172,37 @@ function AnalyticsDashboard() {
 
         {data && (
           <>
+            <section className="adminPanel" aria-labelledby="financial-heading">
+              <div className="panelHeading">
+                <div>
+                  <span className="kicker">Financial overview · Botswana pula</span>
+                  <h2 id="financial-heading">What the recorded jobs are worth</h2>
+                  <p>Jobs created {range} days · {data.since} – {data.until}</p>
+                </div>
+              </div>
+              <div className="adminStats">
+                <Metric label="Recorded job value" value={pula(data.financial.recordedJobValue)} note={data.financial.jobsCount + " non-cancelled jobs in this period"} />
+                <Metric label="Value marked paid" value={pula(data.financial.paidJobValue)} note="Full job amounts for jobs currently marked Paid" />
+                <Metric label="Unpaid job value" value={pula(data.financial.unpaidJobValue)} note="Jobs currently marked Unpaid; excludes Part-paid" />
+                <Metric label="Part-paid jobs" value={data.financial.partPaidJobsCount} note={pula(data.financial.partPaidJobValue) + " total job value; amount received is not recorded"} />
+              </div>
+              <div className="adminContent twoColumn">
+                <section className="nested">
+                  <div className="panelHeading"><div><span className="kicker">By service</span><h3>Where job value is recorded</h3></div></div>
+                  <MoneyBreakdown rows={data.financial.services} />
+                </section>
+                <section className="nested">
+                  <div className="panelHeading"><div><span className="kicker">Data quality</span><h3>Important before making money decisions</h3></div></div>
+                  <div className="detailList">
+                    <div><dt>Non-cancelled jobs</dt><dd><strong>{data.financial.jobsCount}</strong></dd></div>
+                    <div><dt>Cancelled jobs excluded</dt><dd><strong>{data.financial.cancelledJobsCount}</strong></dd></div>
+                    <div><dt>Jobs missing a usable amount</dt><dd><strong>{data.financial.jobsMissingAmount}</strong></dd></div>
+                  </div>
+                  <p className="formTruth">This is a job-value report, not a bank or cashbook reconciliation. The current records do not store individual payment transactions, the amount received against a Part-paid job, or a payment date. “Value marked paid” means the job is currently marked Paid; it does not prove when cash was received. The selected period is based on job creation date, not payment date.</p>
+                </section>
+              </div>
+            </section>
+
             <div className="adminStats">
               <Metric label="Tracked visitors" value={data.web.visitors} note="Unique browsers seen by Namane's tracker" />
               <Metric label="Tracked page views" value={data.web.pageViews} note="Page views recorded by Namane's tracker" />
