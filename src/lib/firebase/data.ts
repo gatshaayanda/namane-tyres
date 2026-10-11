@@ -96,6 +96,22 @@ export function createJob(input:JobInput){
     : writeLocally();
   return{job,writePromise};
 }
+export async function deleteJob(job:Job){
+  if(!navigator.onLine)throw new Error("Connect to the internet before deleting a job. Nothing has been removed.");
+  const body=await adminRequest("/api/admin/jobs",{method:"DELETE",body:JSON.stringify({id:job.id,publicShareId:job.publicShareId,confirmation:job.customerName})});
+  if(!body?.ok)throw new Error("The server did not confirm job deletion.");
+  const pending=readJobQueue().filter(item=>item.id!==job.id);
+  writeJobQueue(pending);
+  // Remove local copies only after the server confirms deletion.
+  await Promise.all([
+    deleteDoc(doc(db,"jobs",job.id)),
+    deleteDoc(doc(db,"publicJobs",job.publicShareId)),
+  ]);
+  try{
+    localStorage.removeItem(`namane-admin-messages:${job.publicShareId}`);
+    localStorage.removeItem(`namane-admin-message-queue:${job.publicShareId}`);
+  }catch{}
+}
 export async function updateJob(job:Job){
   const now=new Date().toISOString();const next={...job,updatedAt:now};
   const writeLocally=async()=>{await Promise.all([setDoc(doc(db,"jobs",job.id),next,{merge:true}),setDoc(doc(db,"publicJobs",job.publicShareId),{customerName:job.customerName,vehicle:job.vehicle,service:job.service,status:job.status,problem:job.problem,notes:job.notes,createdAt:job.createdAt,updatedAt:now,shareStats:next.shareStats||{views:0,engagements:0}},{merge:true})]);return next;};

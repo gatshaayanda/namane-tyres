@@ -106,3 +106,47 @@ export async function PATCH(request: Request) {
     return errorResponse(error);
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const header = request.headers.get("authorization");
+    const token = header?.startsWith("Bearer ") ? header.slice(7) : "";
+    if (!token) throw new Error("Unauthorized");
+    const user = await adminAuth().verifyIdToken(token);
+    const role = await adminDb().doc(`admins/${user.uid}`).get();
+    if (!role.exists || String(role.data()?.role) !== "owner") {
+      throw new Error("Only the business owner can permanently delete jobs.");
+    }
+
+    const body = await request.json();
+    const id = typeof body?.id === "string" ? body.id.trim() : "";
+    const publicShareId = typeof body?.publicShareId === "string" ? body.publicShareId.trim() : "";
+    const confirmation = typeof body?.confirmation === "string" ? body.confirmation.trim() : "";
+    if (!id || !publicShareId || !confirmation) {
+      return NextResponse.json({ error: "Job identifiers and customer-name confirmation are required." }, { status: 422 });
+    }
+
+    const db = adminDb();
+    const jobRef = db.collection("jobs").doc(id);
+    const publicRef = db.collection("publicJobs").doc(publicShareId);
+    const [jobSnapshot, publicSnapshot] = await Promise.all([jobRef.get(), publicRef.get()]);
+    if (!jobSnapshot.exists) return NextResponse.json({ error: "This job no longer exists. Refresh the work board." }, { status: 404 });
+    const job = jobSnapshot.data() ?? {};
+    if (String(job.publicShareId ?? "") !== publicShareId || String(job.customerName ?? "").trim() !== confirmation) {
+      return NextResponse.json({ error: "Confirmation did not match this job. Nothing was deleted." }, { status: 409 });
+    }
+
+    // Disable the public share record and remove all Firestore subcollections.
+    // recursiveDelete also removes nested photos, messages and notification tokens.
+    if (publicSnapshot.exists) await db.recursiveDelete(publicRef);
+    await db.recursiveDelete(jobRef);
+    return NextResponse.json({ ok: true, id, publicShareId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Job could not be deleted.";
+    const status = message === "Unauthorized" ? 401
+      : message === "Only the business owner can permanently delete jobs." ? 403
+      : 500;
+    console.error("[admin/jobs DELETE]", error);
+    return NextResponse.json({ error: status === 500 ? "Job could not be deleted. Refresh and try again." : message }, { status });
+  }
+}

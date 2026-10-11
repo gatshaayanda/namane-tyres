@@ -435,3 +435,11 @@ This section supersedes older install/handoff wording if any detail conflicts. P
 - “Value marked paid” sums the full amount of jobs currently marked `Paid`; “Unpaid job value” sums jobs currently marked `Unpaid`. `Part-paid` jobs show their full job value and count separately; because the current schema does not record the amount received or payment transactions/payment dates, do not treat these figures as a cashbook, payment-date report, bank balance, profit, or verified cash collected.
 - Service breakdowns show recorded job value and job count by the service text saved on each job. They are not profit margins: costs, parts, expenses, and supplier purchases are not recorded here.
 - Keep the owner role check on the API. Do not expose job financial amounts through public job-share pages or public analytics events.
+
+
+## Owner-only job deletion — October 2026
+- The Jobs & progress screen has a clearly separated danger zone at the bottom of a selected job. Deletion is online-only, requires a browser confirmation and typing the customer name, and permanently disables the customer share link.
+- The DELETE API independently enforces the `admins/{uid}.role === "owner"` check; staff cannot delete jobs by calling the endpoint directly.
+- The API verifies that the job ID, public share ID and typed customer name match the saved record before deleting. It recursively deletes the private job tree and public share tree, including Firestore photos, messages and notification-token subcollections. The browser's cached job/public projection and pending queued writes are cleaned only after server confirmation.
+- Uploaded image files may remain at their external UploadThing CDN URLs; deleting a job removes their Firestore references and disables the app's public progress page, but does not claim to purge externally hosted binaries.
+- Do not delete while offline, and do not delete real completed customer jobs merely to tidy the board. Use this for test/duplicate records after checking the selected customer and vehicle.

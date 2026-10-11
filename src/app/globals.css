@@ -21,3 +21,7 @@
 .priceEditorRow input{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:#fbfcfd}
 .priceRemoveButton{white-space:nowrap}
 @media(max-width:700px){.serviceCombinedCards{grid-template-columns:1fr}.priceEditorRow{grid-template-columns:1fr}.topbarInner{flex-wrap:wrap;gap:6px 12px}.navLinks{gap:12px;font-size:.8rem}}
+
+
+/* Owner-only destructive job action */
+.dangerZone{border:1px solid #e5b8b8;background:#fffafa;border-radius:14px;padding:16px;margin-top:18px}.buttonDanger{background:#9f2525;color:#fff;border:1px solid #9f2525}.buttonDanger:disabled{opacity:.55;cursor:not-allowed}

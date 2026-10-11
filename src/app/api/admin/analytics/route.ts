@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     const bookingPageViews = pageViews.filter((event) => event.path === "/book").length;
     const eventCount = (name: string) => events.filter((event) => event.event === name).length;
     const requests = requestSnapshot.docs.map((doc) => doc.data() as Record<string, unknown>);
-    const jobs = jobSnapshot.docs.map((doc) => doc.data() as Record<string, unknown>);
+    const jobs = jobSnapshot.docs.map((doc) => doc.data() as Record<string, unknown>).filter((job) => !job.deletedAt);
     const publicJobs = publicJobSnapshot.docs.map((doc) => doc.data() as Record<string, unknown>);
     const jobsCreatedInRange = jobs.filter((job) => typeof job.createdAt === "string" && job.createdAt >= since).length;
     const requestsByStatus = countBy(requests, "status");
