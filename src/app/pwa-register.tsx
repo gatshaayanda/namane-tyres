@@ -207,10 +207,10 @@ export default function PwaRegister() {
   return <>
     {showBrowserHandoff && <div role="alertdialog" aria-modal="true" aria-labelledby="namane-browser-title" style={{position:"fixed",inset:0,zIndex:2147483647,display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:"rgba(17,24,39,.86)",backdropFilter:"blur(5px)"}}>
       <section style={{width:"100%",maxWidth:480,background:"#fff",color:"#111827",borderRadius:22,padding:24,boxShadow:"0 24px 70px rgba(0,0,0,.3)"}}>
-        <div style={{fontSize:".72rem",fontWeight:900,letterSpacing:".14em",color:"#b45309"}}>NAMANE TYRES · CUSTOMER ACCESS</div>
+        <div style={{fontSize:".72rem",fontWeight:900,letterSpacing:".14em",color:"#854d0e"}}>NAMANE TYRES · CUSTOMER ACCESS</div>
         <h2 id="namane-browser-title" style={{fontSize:"clamp(1.8rem,7vw,2.5rem)",lineHeight:1.05,letterSpacing:"-.04em",margin:"12px 0"}}>Open Namane Tyres in your browser.</h2>
         <p style={{lineHeight:1.65,color:"#475569",margin:"0 0 18px"}}>You opened this link inside another app. Opening it in Chrome or Safari gives you the best experience for requesting tyre help, returning to your requests and optionally saving Namane Tyres to your home screen.</p>
-        <button type="button" onClick={openInBrowser} style={{width:"100%",minHeight:48,border:0,borderRadius:10,background:"#d97706",color:"#fff",fontWeight:900,cursor:"pointer"}}>OPEN IN BROWSER ↗</button>
+        <button type="button" onClick={openInBrowser} style={{width:"100%",minHeight:48,border:0,borderRadius:10,background:"#facc15",color:"#111827",fontWeight:900,cursor:"pointer"}}>OPEN IN BROWSER ↗</button>
         <button type="button" onClick={() => void copyCurrentLink()} style={{width:"100%",minHeight:46,marginTop:10,border:"1px solid #d9e0e7",borderRadius:10,background:"#fff",color:"#111827",fontWeight:900,cursor:"pointer"}}>COPY LINK FOR CHROME / SAFARI</button>
         {handoffMessage && <p role="status" aria-live="polite" style={{margin:"12px 0 0",padding:12,borderRadius:10,background:"#f1f5f9",fontSize:".9rem",lineHeight:1.5}}>{handoffMessage}</p>}
         <p style={{fontSize:".8rem",color:"#64748b",lineHeight:1.5,margin:"14px 0 0"}}>You do not need to install an app to use Namane Tyres. Installation is optional after the page opens in your browser.</p>
