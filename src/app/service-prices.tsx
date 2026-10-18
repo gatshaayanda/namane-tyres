@@ -15,7 +15,6 @@ function matchesPrice(title: string, price: ServicePrice) {
 
 export default function ServicePrices({ descriptions }: { descriptions: readonly ServiceDescription[] }) {
   const [prices, setPrices] = useState<ServicePrice[]>(DEFAULT_SERVICE_PRICES);
-  const [basket, setBasket] = useState<ServicePrice[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -42,23 +41,12 @@ export default function ServicePrices({ descriptions }: { descriptions: readonly
     !query || [title, detail, ...matchedPrices.map((price) => price.name)].some((value) => value.toLowerCase().includes(query)),
   );
   const visibleAdditionalPrices = additionalPrices.filter((price) => !query || price.name.toLowerCase().includes(query));
-  const basketNames = basket.map((price) => price.name);
-  const assistanceHref = basket.length
-    ? `/book?services=${encodeURIComponent(basketNames.join(" | "))}`
-    : "/book";
-
-  function addToBasket(price: ServicePrice) {
-    setBasket((current) => current.some((item) => item.id === price.id) ? current : [...current, price]);
-  }
-  function removeFromBasket(id: string) {
-    setBasket((current) => current.filter((item) => item.id !== id));
+  function requestServiceHref(serviceName: string) {
+    return `/book?services=${encodeURIComponent(serviceName)}`;
   }
 
   function priceAction(price: ServicePrice) {
-    const added = basket.some((item) => item.id === price.id);
-    return <button className={`button ${added ? "buttonAdded" : "buttonPrimary"} serviceAddButton`} type="button" onClick={() => added ? removeFromBasket(price.id) : addToBasket(price)} aria-pressed={added}>
-      {added ? "✓ Added · Remove" : "＋ Add to basket"}
-    </button>;
+    return <Link href={requestServiceHref(price.name)} className="button buttonPrimary serviceAddButton">Request this service ↗</Link>;
   }
 
   return (
@@ -68,13 +56,6 @@ export default function ServicePrices({ descriptions }: { descriptions: readonly
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a service or price…" aria-label="Search services and prices" />
         {search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search">Clear</button>}
       </label>
-
-      {basket.length > 0 && <section className="serviceBasket" aria-live="polite" aria-label="Selected services">
-        <div className="basketHeading"><div><span className="kicker">Your selection</span><h3>Basket <span className="basketCount">{basket.length}</span></h3></div><button type="button" className="basketClear" onClick={() => setBasket([])}>Clear basket</button></div>
-        <ul>{basket.map((price) => <li key={price.id}><span>{price.name}</span><strong>P{price.price.toFixed(2)}</strong><button type="button" onClick={() => removeFromBasket(price.id)} aria-label={`Remove ${price.name} from basket`}>×</button></li>)}</ul>
-        <p>These are your selected services, not a confirmed booking. Continue to tell Namane Tyres about your vehicle and what you need.</p>
-        <Link href={assistanceHref} className="button buttonPrimary">Continue to Request Assistance ↗</Link>
-      </section>}
 
       <div className="cards serviceCombinedCards">
         {visibleServices.map(({ icon, title, detail, matchedPrices }) => (
@@ -88,7 +69,7 @@ export default function ServicePrices({ descriptions }: { descriptions: readonly
                 <div><span>{price.name}</span><strong>P{price.price.toFixed(2)}</strong></div>
                 {priceAction(price)}
               </div>)}
-            </div> : <Link href="/book" className="button buttonLight serviceAskButton">Ask about this service ↗</Link>}
+            </div> : <Link href={requestServiceHref(title)} className="button buttonPrimary serviceAskButton">Request this service ↗</Link>}
           </article>
         ))}
         {visibleAdditionalPrices.map((price) => <article className="card serviceCombinedCard" key={price.id}>
@@ -97,7 +78,7 @@ export default function ServicePrices({ descriptions }: { descriptions: readonly
         </article>)}
       </div>
       {visibleServices.length === 0 && visibleAdditionalPrices.length === 0 && <p className="serviceNoResults">No matching service or price. Try another search, or <Link href="/book">request assistance</Link>.</p>}
-      <div className="serviceBottomAction"><p>Need help choosing? Tell the team what is happening and they can review your request.</p><Link href={basket.length ? assistanceHref : "/book"} className="button buttonPrimary">{basket.length ? "Request Assistance with selection" : "Request Assistance"} ↗</Link></div>
+      <div className="serviceBottomAction"><p>Not sure which service you need? Describe the problem and the team can help you choose.</p><Link href="/book" className="button buttonPrimary">Describe what you need ↗</Link></div>
     </div>
   );
 }
